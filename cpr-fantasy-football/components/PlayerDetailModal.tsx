@@ -60,9 +60,6 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
               <div className="text-sm text-gray-600 mb-1">Total Paid</div>
               <div className="text-2xl font-bold text-green-700">{formatCurrency(player.paid)}</div>
-              <div className="text-xs text-gray-500 mt-1">
-                {player.paymentDetails.length} payment{player.paymentDetails.length !== 1 ? 's' : ''}
-              </div>
             </div>
           </div>
 
@@ -124,23 +121,12 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
           )}
 
           {/* Payments */}
-          {player.paymentDetails.length > 0 && (
+          {player.paid > 0 && (
             <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Payments Received</h3>
-              <div className="space-y-2">
-                {player.paymentDetails.map((payment, idx) => (
-                  <div
-                    key={idx}
-                    className="flex justify-between items-center p-3 bg-green-50 rounded-lg border border-green-100"
-                  >
-                    <div className="text-sm text-gray-600">{payment.date}</div>
-                    <div className="font-semibold text-green-700">{formatCurrency(payment.amount)}</div>
-                  </div>
-                ))}
-                <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg border border-green-200">
-                  <span className="font-semibold text-gray-900">Total Paid</span>
-                  <span className="font-bold text-green-700">{formatCurrency(player.paid)}</span>
-                </div>
+              <h3 className="font-semibold text-gray-900 mb-3">Total Payments</h3>
+              <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg border border-green-200">
+                <span className="font-semibold text-gray-900">Total Paid</span>
+                <span className="font-bold text-green-700">{formatCurrency(player.paid)}</span>
               </div>
             </div>
           )}
