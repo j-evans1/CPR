@@ -114,7 +114,8 @@ export default function PaymentsPage() {
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900">{player.name}</div>
                     <div className="text-sm text-gray-500">
-                      {player.matchCount} matches{player.seasonFees > 0 ? ' • Season fee' : ''}
+                      {player.matchCount} matches
+                      {player.fines > 0 ? ` • ${player.fineDetails.length} fine${player.fineDetails.length !== 1 ? 's' : ''}` : ''}
                     </div>
                   </div>
                 </div>
