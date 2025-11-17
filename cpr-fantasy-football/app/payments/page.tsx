@@ -32,9 +32,9 @@ export default function PaymentsPage() {
   if (loading) {
     return (
       <div>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-navy mb-2">Payments Tracker</h2>
-          <p className="text-gray-600">Match fees, fines, and payment status</p>
+        <div className="mb-6 bg-navy text-white p-6 rounded-lg">
+          <h2 className="text-2xl font-bold mb-2">Payments Tracker</h2>
+          <p className="opacity-90">Match fees and payment status</p>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
           <div className="text-4xl mb-4">⏳</div>
@@ -47,9 +47,9 @@ export default function PaymentsPage() {
   if (error) {
     return (
       <div>
-        <div className="mb-6">
-          <h2 className="text-2xl font-bold text-navy mb-2">Payments Tracker</h2>
-          <p className="text-gray-600">Match fees, fines, and payment status</p>
+        <div className="mb-6 bg-navy text-white p-6 rounded-lg">
+          <h2 className="text-2xl font-bold mb-2">Payments Tracker</h2>
+          <p className="opacity-90">Match fees and payment status</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-6">
           <h3 className="text-xl font-bold text-red-800 mb-2">Error Loading Data</h3>
@@ -67,10 +67,10 @@ export default function PaymentsPage() {
 
   return (
     <div>
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold text-navy mb-2">Payments Tracker</h2>
-        <p className="text-gray-600">
-          Tap a player to see detailed breakdown of fees, fines, and payments
+      <div className="mb-6 bg-navy text-white p-6 rounded-lg">
+        <h2 className="text-2xl font-bold mb-2">Payments Tracker</h2>
+        <p className="opacity-90">
+          Tap a player to see detailed breakdown of match fees and payments
         </p>
       </div>
 
@@ -114,7 +114,7 @@ export default function PaymentsPage() {
                   <div className="flex-1">
                     <div className="font-semibold text-gray-900">{player.name}</div>
                     <div className="text-sm text-gray-500">
-                      {player.matchCount} matches • {player.fineDetails.length} fine{player.fineDetails.length !== 1 ? 's' : ''}
+                      {player.matchCount} matches{player.seasonFees > 0 ? ' • Season fee' : ''}
                     </div>
                   </div>
                 </div>
