@@ -83,13 +83,23 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Process fines to get fine details (skip first 4 rows)
-    const fineRows = finesData.slice(4);
-    fineRows.forEach((row: any) => {
+    // Process fines to get fine details
+    // Track the current date as we iterate (some rows have empty date)
+    let currentDate = '';
+
+    finesData.forEach((row: any, index: number) => {
+      // Skip header rows (first 4 rows)
+      if (index < 4) return;
+
       const playerName = String(row._4 || '').trim();
       const fine = parseCurrency(row._2);
       const date = String(row._1 || '').trim();
       const description = String(row._3 || '').trim();
+
+      // Update current date if this row has a date
+      if (date) {
+        currentDate = date;
+      }
 
       if (!playerName || fine === 0) return;
 
@@ -97,7 +107,7 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       const player = playerMap.get(normalized);
 
       if (player) {
-        player.fineDetails.push({ date, amount: fine, description });
+        player.fineDetails.push({ date: currentDate || date, amount: fine, description });
       }
     });
 
@@ -131,22 +141,22 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
     for (const player of playerMap.values()) {
       player.fines = player.fineDetails.reduce((sum, fine) => sum + fine.amount, 0);
 
-      // Sort match details by date (most recent first)
+      // Sort match details by date (oldest first)
       player.matchDetails.sort((a, b) => {
         const [dayA, monthA, yearA] = a.date.split('/').map(Number);
         const [dayB, monthB, yearB] = b.date.split('/').map(Number);
         const dateA = new Date(yearA, monthA - 1, dayA);
         const dateB = new Date(yearB, monthB - 1, dayB);
-        return dateB.getTime() - dateA.getTime();
+        return dateA.getTime() - dateB.getTime();
       });
 
-      // Sort payment details by date (most recent first)
+      // Sort payment details by date (oldest first)
       player.paymentDetails.sort((a, b) => {
         const [dayA, monthA, yearA] = a.date.split('/').map(Number);
         const [dayB, monthB, yearB] = b.date.split('/').map(Number);
         const dateA = new Date(yearA, monthA - 1, dayA);
         const dateB = new Date(yearB, monthB - 1, dayB);
-        return dateB.getTime() - dateA.getTime();
+        return dateA.getTime() - dateB.getTime();
       });
     }
 
