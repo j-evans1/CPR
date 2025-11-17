@@ -22,17 +22,17 @@ export interface Match {
   players: MatchPlayerPerformance[];
 }
 
-// Parse score from match description (e.g., "CPR 3v2 Opponent" -> {cpr: 3, opponent: 2})
-function parseScore(matchDescription: string): { cpr: number; opponent: number; opponent: string } {
+// Parse score from match description (e.g., "CPR 3v2 Opponent" -> {cpr: 3, opponentScore: 2, opponentName: "Opponent"})
+function parseScore(matchDescription: string): { cpr: number; opponentScore: number; opponentName: string } {
   const match = matchDescription.match(/CPR\s+(\d+)v(\d+)\s+(.+)/i);
   if (match) {
     return {
       cpr: parseInt(match[1], 10),
-      opponent: parseInt(match[2], 10),
-      opponent: match[3].trim(),
+      opponentScore: parseInt(match[2], 10),
+      opponentName: match[3].trim(),
     };
   }
-  return { cpr: 0, opponent: 0, opponent: matchDescription.replace(/^CPR\s+/i, '').trim() };
+  return { cpr: 0, opponentScore: 0, opponentName: matchDescription.replace(/^CPR\s+/i, '').trim() };
 }
 
 // Fetch and process match data
@@ -58,7 +58,7 @@ export async function getMatches(): Promise<Match[]> {
 
       // Create match if it doesn't exist
       if (!matchesMap.has(matchKey)) {
-        const { cpr, opponent: oppScore, opponent: oppName } = parseScore(matchDescription);
+        const { cpr, opponentScore: oppScore, opponentName: oppName } = parseScore(matchDescription);
         matchesMap.set(matchKey, {
           date,
           opponent: oppName,
