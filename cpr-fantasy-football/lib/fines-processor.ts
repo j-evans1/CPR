@@ -40,15 +40,12 @@ export async function getPlayerFines(): Promise<PlayerFineDetail[]> {
     // Process fines data
     // Skip first 4 rows: 2 header rows + 1 empty row + 1 column header row
     // PapaParse with headers=false uses 0-based array indices
-    console.log('First 6 rows of fines data:', finesData.slice(0, 6));
     const finesRows = finesData.slice(4);
-    console.log('Processing rows (after skipping 4):', finesRows.slice(0, 3));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     finesRows.forEach((row: any) => {
       // When headers=false, PapaParse returns arrays, not objects
       // Column indices: 0 is empty, 1 is Date, 2 is Fines, 3 is Description, 4 is Player
-      console.log('Processing row:', row);
       const playerName = String(row[4] || '').trim();
       const fine = parseCurrency(row[2]);
       const date = String(row[1] || '').trim();
