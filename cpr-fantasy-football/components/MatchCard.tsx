@@ -74,15 +74,15 @@ export default function MatchCard({ match }: MatchCardProps) {
             <h4 className="font-semibold text-sm text-gray-700 mb-3 uppercase tracking-wide">
               Player Performances
             </h4>
-            <div className="space-y-2">
+            <div className="space-y-1">
               {sortedPlayers.map((player, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-3 bg-white rounded-lg shadow-sm"
+                  className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm"
                 >
-                  <div className="flex-1">
+                  <div className="flex-1 flex items-center gap-2">
                     <div className="font-medium text-gray-900">{player.name}</div>
-                    <div className="text-xs text-gray-500 space-x-2 mt-1">
+                    <div className="text-xs text-gray-500 flex gap-2">
                       {player.goals > 0 && <span>⚽ {player.goals}</span>}
                       {player.assists > 0 && <span>🅰️ {player.assists}</span>}
                       {player.cleanSheet > 0 && <span>🧤 CS</span>}

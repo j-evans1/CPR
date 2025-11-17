@@ -10,7 +10,7 @@ export interface PlayerPaymentDetail {
   paid: number;
   balance: number;
   matchCount: number;
-  matchDetails: { date: string; fee: number; gameweek: string }[];
+  matchDetails: { date: string; fee: number; game: string }[];
   paymentDetails: { date: string; amount: number; description: string }[];
   fineDetails: { date: string; amount: number; description: string }[];
 }
@@ -87,7 +87,7 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       const playerName = String(row[MATCH_COLUMNS.PLAYER] || '').trim();
       const fee = parseCurrency(row[MATCH_COLUMNS.FEE]);
       const date = String(row[MATCH_COLUMNS.DATE] || '').trim();
-      const gameweek = String(row[MATCH_COLUMNS.GAMEWEEK] || '').trim();
+      const game = String(row[MATCH_COLUMNS.GAME] || '').trim();
 
       if (!playerName || !date) return;
 
@@ -95,9 +95,9 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       const player = playerMap.get(normalized);
 
       if (player && fee > 0) {
-        player.matchDetails.push({ date, fee, gameweek });
+        player.matchDetails.push({ date, fee, game });
       }
-     
+
     });
 
     // Process bank payments

@@ -78,7 +78,7 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-3 py-2 text-left font-semibold text-gray-700">Date</th>
-                      <th className="px-3 py-2 text-left font-semibold text-gray-700">Description</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-700">Match</th>
                       <th className="px-3 py-2 text-right font-semibold text-gray-700">Amount</th>
                     </tr>
                   </thead>
@@ -86,7 +86,7 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
                     {player.matchDetails.map((match, idx) => (
                       <tr key={idx} className="border-t border-gray-100">
                         <td className="px-3 py-2 text-gray-900">{match.date}</td>
-                        <td className="px-3 py-2 text-gray-600">{match.gameweek}</td>
+                        <td className="px-3 py-2 text-gray-600">{match.game}</td>
                         <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(match.fee)}</td>
                       </tr>
                     ))}

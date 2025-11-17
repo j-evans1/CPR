@@ -65,7 +65,7 @@ export default async function LeaguePage() {
           </div>
 
           {/* Team Cards */}
-          <div className="space-y-3">
+          <div className="space-y-2">
             {teams.map((team, index) => (
               <TeamCard key={team.managerName} team={team} index={index} />
             ))}

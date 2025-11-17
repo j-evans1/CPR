@@ -94,13 +94,26 @@ export default function FinesPage() {
           <button
             key={player.name}
             onClick={() => setSelectedPlayer(player)}
-            className="w-full p-4 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation text-left"
+            className="w-full p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation text-left"
           >
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between gap-2">
               <div className="flex items-center space-x-3 flex-1">
                 <div className="text-lg font-bold text-gray-400 min-w-[2rem]">
                   {index + 1}
                 </div>
+                <svg
+                  className="w-5 h-5 text-blue-600 flex-shrink-0"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                  />
+                </svg>
                 <div className="flex-1">
                   <div className="font-semibold text-gray-900">{player.name}</div>
                   <div className="text-sm text-gray-500">
