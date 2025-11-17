@@ -83,24 +83,14 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Process fines to get fine details
-    // Track the current date as we iterate (some rows have empty date)
-    let currentDate = '';
-
+    // Process fines - just sum up fine amounts by player, ignore dates/descriptions
     finesData.forEach((row: any, index: number) => {
       // Skip header rows (first 4 rows)
       if (index < 4) return;
 
-      // Correct column mapping: _2=Date, _3=Fines, _4=Description, _5=Player
-      const date = String(row._2 || '').trim();
+      // Column mapping: _3=Fines, _5=Player
       const fine = parseCurrency(row._3);
-      const description = String(row._4 || '').trim();
       const playerName = String(row._5 || '').trim();
-
-      // Update current date if this row has a date
-      if (date) {
-        currentDate = date;
-      }
 
       if (!playerName || fine === 0) return;
 
@@ -108,7 +98,7 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       const player = playerMap.get(normalized);
 
       if (player) {
-        player.fineDetails.push({ date: currentDate || date, amount: fine, description });
+        player.fines += fine;
       }
     });
 
@@ -126,14 +116,23 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       // Skip if no payment amount
       if (payment === 0) return;
 
-      // Parse date and filter for dates from 01/08/2025 onwards
-      if (date) {
-        const [day, month, year] = date.split('/').map(Number);
-        const rowDate = new Date(year, month - 1, day);
-        const cutoffDate = new Date(2025, 7, 1); // August 1, 2025 (month is 0-indexed)
+      // Skip if no date
+      if (!date) return;
 
-        if (rowDate < cutoffDate) return;
-      }
+      // Parse date and filter for dates from 01/08/2025 onwards
+      const dateParts = date.split('/');
+      if (dateParts.length !== 3) return; // Invalid date format
+
+      const [day, month, year] = dateParts.map(Number);
+
+      // Validate date parts
+      if (isNaN(day) || isNaN(month) || isNaN(year)) return;
+
+      const rowDate = new Date(year, month - 1, day);
+      const cutoffDate = new Date(2025, 7, 1); // August 1, 2025 (month is 0-indexed)
+
+      // Only process dates from Aug 1, 2025 onwards
+      if (rowDate < cutoffDate) return;
 
       // Match player by the Player column in bank statement
       const normalized = normalizePlayerName(playerNameFromBank);
@@ -144,10 +143,8 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Calculate total fines from fine details
+    // Sort match and payment details
     for (const player of playerMap.values()) {
-      player.fines = player.fineDetails.reduce((sum, fine) => sum + fine.amount, 0);
-
       // Sort match details by date (oldest first)
       player.matchDetails.sort((a, b) => {
         const [dayA, monthA, yearA] = a.date.split('/').map(Number);

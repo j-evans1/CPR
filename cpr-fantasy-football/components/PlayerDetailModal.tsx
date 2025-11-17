@@ -122,36 +122,6 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
             )}
           </div>
 
-          {/* Fines */}
-          {player.fineDetails.length > 0 && (
-            <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Fines</h3>
-              <div className="overflow-x-auto">
-                <table className="min-w-full bg-white border border-gray-200 rounded-lg text-sm">
-                  <thead className="bg-red-50">
-                    <tr>
-                      <th className="px-3 py-2 text-left font-semibold text-gray-700">Date</th>
-                      <th className="px-3 py-2 text-left font-semibold text-gray-700">Description</th>
-                      <th className="px-3 py-2 text-right font-semibold text-gray-700">Fine</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {player.fineDetails.map((fine, idx) => (
-                      <tr key={idx} className="border-t border-gray-100">
-                        <td className="px-3 py-2 text-gray-900">{fine.date}</td>
-                        <td className="px-3 py-2 text-gray-600">{fine.description}</td>
-                        <td className="px-3 py-2 text-right text-red-700 font-semibold">{formatCurrency(fine.amount)}</td>
-                      </tr>
-                    ))}
-                    <tr className="border-t-2 border-gray-300 bg-red-50">
-                      <td colSpan={2} className="px-3 py-2 font-semibold text-gray-900">Total Fines</td>
-                      <td className="px-3 py-2 text-right font-bold text-red-700">{formatCurrency(player.fines)}</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          )}
 
           {/* Payments */}
           {player.paid > 0 && (
