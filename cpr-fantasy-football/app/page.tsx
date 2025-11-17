@@ -26,7 +26,7 @@ export default async function Home() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-navy mb-2">Player Stats Leaderboard</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">Player Stats Leaderboard</h2>
         <p className="text-gray-600">Season 2025/26 - Updated live from match data</p>
       </div>
 
