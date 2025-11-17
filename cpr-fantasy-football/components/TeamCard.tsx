@@ -34,8 +34,8 @@ export default function TeamCard({ team, index }: TeamCardProps) {
             {getRankBadge(team.rank || index + 1)}
           </div>
           <div className="text-left flex-1">
-            <div className="font-semibold text-gray-900">{team.managerName}</div>
-            <div className="text-sm text-gray-500">{team.players.length} players</div>
+            <div className="font-semibold text-gray-900">{team.teamName}</div>
+            <div className="text-sm text-gray-500">Manager: {team.managerName}</div>
           </div>
         </div>
         <div className="flex items-center space-x-3">

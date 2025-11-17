@@ -38,6 +38,7 @@ export async function getFantasyLeague(): Promise<FantasyTeam[]> {
     let inPlayerSection = false;
 
     teamData.forEach((row: any, index: number) => {
+
       // Check if this row contains "Manager:" which indicates a new team
       if (row._2 && String(row._2).includes('Manager:')) {
         // Save previous team if exists
@@ -97,9 +98,6 @@ export async function getFantasyLeague(): Promise<FantasyTeam[]> {
       if (a.rank && b.rank) return a.rank - b.rank;
       return b.totalPoints - a.totalPoints;
     });
-
-    console.log('Processed teams:', teams.length);
-    console.log('First team:', teams[0]);
 
     return teams;
   } catch (error) {
