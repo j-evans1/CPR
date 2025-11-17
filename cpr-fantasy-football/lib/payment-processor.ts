@@ -91,10 +91,11 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       // Skip header rows (first 4 rows)
       if (index < 4) return;
 
-      const playerName = String(row._4 || '').trim();
-      const fine = parseCurrency(row._2);
-      const date = String(row._1 || '').trim();
-      const description = String(row._3 || '').trim();
+      // Correct column mapping: _2=Date, _3=Fines, _4=Description, _5=Player
+      const date = String(row._2 || '').trim();
+      const fine = parseCurrency(row._3);
+      const description = String(row._4 || '').trim();
+      const playerName = String(row._5 || '').trim();
 
       // Update current date if this row has a date
       if (date) {
@@ -112,28 +113,34 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
     });
 
     // Process bank payments
+    // Only process rows from 01/08/2025 onwards with Player name in column G
     bankData.forEach((row: any) => {
       const description = String(row.Description || '').trim();
       const payment = parseCurrency(row.In);
       const date = String(row.Date || '').trim();
+      const playerNameFromBank = String(row.Player || '').trim();
 
-      if (!description || payment === 0) return;
+      // Skip if no player name in column G
+      if (!playerNameFromBank) return;
 
-      // Try to match player name from description
-      for (const [key, player] of playerMap.entries()) {
-        const playerNameLower = normalizePlayerName(player.name);
-        const descriptionLower = normalizePlayerName(description);
+      // Skip if no payment amount
+      if (payment === 0) return;
 
-        // Check if description contains player name or parts of it
-        const nameParts = player.name.split(' ');
-        const matchesName = nameParts.some(part =>
-          part.length > 1 && descriptionLower.includes(normalizePlayerName(part))
-        );
+      // Parse date and filter for dates from 01/08/2025 onwards
+      if (date) {
+        const [day, month, year] = date.split('/').map(Number);
+        const rowDate = new Date(year, month - 1, day);
+        const cutoffDate = new Date(2025, 7, 1); // August 1, 2025 (month is 0-indexed)
 
-        if (matchesName || descriptionLower.includes(playerNameLower)) {
-          player.paymentDetails.push({ date, amount: payment, description });
-          break;
-        }
+        if (rowDate < cutoffDate) return;
+      }
+
+      // Match player by the Player column in bank statement
+      const normalized = normalizePlayerName(playerNameFromBank);
+      const player = playerMap.get(normalized);
+
+      if (player) {
+        player.paymentDetails.push({ date, amount: payment, description });
       }
     });
 
