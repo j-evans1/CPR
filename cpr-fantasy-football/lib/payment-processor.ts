@@ -141,13 +141,17 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Process fines data (already has headers parsed by fetchCSV, no need to skip rows)
+    // Process fines data
+    // The Fines CSV has the same structure as Match Details - skip first 3 rows
+    // PapaParse will use column indices like _2, _3, _4, _5 since first row isn't proper headers
+    const finesRows = finesData.slice(3);
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    finesData.forEach((row: any) => {
-      const playerName = String(row.Player || '').trim();
-      const fine = parseCurrency(row.Fines);
-      const date = String(row.Date || '').trim();
-      const description = String(row.Description || '').trim();
+    finesRows.forEach((row: any) => {
+      // Column indices: _1 is empty, _2 is Date, _3 is Fines, _4 is Description, _5 is Player
+      const playerName = String(row._5 || '').trim();
+      const fine = parseCurrency(row._3);
+      const date = String(row._2 || '').trim();
+      const description = String(row._4 || '').trim();
 
       if (!playerName || !date) return;
 
