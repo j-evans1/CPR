@@ -87,12 +87,39 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
           {/* Match Fees */}
           <div className="mb-6">
             <h3 className="font-semibold text-gray-900 mb-3">Match Fees</h3>
-            <div className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-center">
-                <span className="text-gray-600">{player.matchCount} matches @ various rates</span>
-                <span className="font-semibold text-navy">{formatCurrency(player.matchFees)}</span>
+            {player.matchDetails.length > 0 ? (
+              <div className="overflow-x-auto">
+                <table className="min-w-full bg-white border border-gray-200 rounded-lg text-sm">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-700">Date</th>
+                      <th className="px-3 py-2 text-left font-semibold text-gray-700">Gameweek</th>
+                      <th className="px-3 py-2 text-right font-semibold text-gray-700">Fee</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {player.matchDetails.map((match, idx) => (
+                      <tr key={idx} className="border-t border-gray-100">
+                        <td className="px-3 py-2 text-gray-900">{match.date}</td>
+                        <td className="px-3 py-2 text-gray-600">{match.gameweek}</td>
+                        <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(match.fee)}</td>
+                      </tr>
+                    ))}
+                    <tr className="border-t-2 border-gray-300 bg-gray-50">
+                      <td colSpan={2} className="px-3 py-2 font-semibold text-gray-900">Total Match Fees</td>
+                      <td className="px-3 py-2 text-right font-bold text-navy">{formatCurrency(player.matchFees)}</td>
+                    </tr>
+                  </tbody>
+                </table>
               </div>
-            </div>
+            ) : (
+              <div className="bg-gray-50 rounded-lg p-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-gray-600">{player.matchCount} matches</span>
+                  <span className="font-semibold text-navy">{formatCurrency(player.matchFees)}</span>
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Fines */}
@@ -123,11 +150,38 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
           {/* Payments */}
           {player.paid > 0 && (
             <div className="mb-6">
-              <h3 className="font-semibold text-gray-900 mb-3">Total Payments</h3>
-              <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg border border-green-200">
-                <span className="font-semibold text-gray-900">Total Paid</span>
-                <span className="font-bold text-green-700">{formatCurrency(player.paid)}</span>
-              </div>
+              <h3 className="font-semibold text-gray-900 mb-3">Payments Received</h3>
+              {player.paymentDetails.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="min-w-full bg-white border border-gray-200 rounded-lg text-sm">
+                    <thead className="bg-green-50">
+                      <tr>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-700">Date</th>
+                        <th className="px-3 py-2 text-left font-semibold text-gray-700">Description</th>
+                        <th className="px-3 py-2 text-right font-semibold text-gray-700">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {player.paymentDetails.map((payment, idx) => (
+                        <tr key={idx} className="border-t border-gray-100">
+                          <td className="px-3 py-2 text-gray-900">{payment.date}</td>
+                          <td className="px-3 py-2 text-gray-600 text-xs">{payment.description}</td>
+                          <td className="px-3 py-2 text-right text-green-700 font-semibold">{formatCurrency(payment.amount)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 border-gray-300 bg-green-50">
+                        <td colSpan={2} className="px-3 py-2 font-semibold text-gray-900">Total Paid</td>
+                        <td className="px-3 py-2 text-right font-bold text-green-700">{formatCurrency(player.paid)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="flex justify-between items-center p-3 bg-green-100 rounded-lg border border-green-200">
+                  <span className="font-semibold text-gray-900">Total Paid</span>
+                  <span className="font-bold text-green-700">{formatCurrency(player.paid)}</span>
+                </div>
+              )}
             </div>
           )}
         </div>

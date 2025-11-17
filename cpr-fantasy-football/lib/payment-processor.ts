@@ -10,6 +10,8 @@ export interface PlayerPaymentDetail {
   balance: number;
   matchCount: number;
   fineDetails: { date: string; amount: number; description: string }[];
+  matchDetails: { date: string; fee: number; gameweek: string }[];
+  paymentDetails: { date: string; amount: number; description: string }[];
 }
 
 // Parse currency string (e.g., "£12.00" -> 12.00)
@@ -28,10 +30,12 @@ function normalizePlayerName(name: string): string {
 
 export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
   try {
-    // Fetch player data and fines
-    const [playerData, finesData] = await Promise.all([
+    // Fetch all data sources
+    const [playerData, finesData, matchData, bankData] = await Promise.all([
       fetchCSV<any>(CSV_URLS.PLAYER_DATA),
       fetchCSV<any>(CSV_URLS.FINES),
+      fetchCSV<any>(CSV_URLS.MATCH_DETAILS),
+      fetchCSV<any>(CSV_URLS.BANK_STATEMENT),
     ]);
 
     const playerMap = new Map<string, PlayerPaymentDetail>();
@@ -50,13 +54,33 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       playerMap.set(normalized, {
         name: playerName,
         matchFees: fees,
-        fines: 0, // Will be calculated from fees total and match fees
+        fines: 0,
         totalOwed: fees,
         paid: payments,
         balance: due,
         matchCount: appearance,
         fineDetails: [],
+        matchDetails: [],
+        paymentDetails: [],
       });
+    });
+
+    // Process match details to get match fees per game (skip first 3 rows)
+    const matchRows = matchData.slice(3);
+    matchRows.forEach((row: any) => {
+      const playerName = String(row._5 || '').trim();
+      const fee = parseCurrency(row._2);
+      const date = String(row._1 || '').trim();
+      const gameweek = String(row._3 || '').trim();
+
+      if (!playerName || !date) return;
+
+      const normalized = normalizePlayerName(playerName);
+      const player = playerMap.get(normalized);
+
+      if (player && fee > 0) {
+        player.matchDetails.push({ date, fee, gameweek });
+      }
     });
 
     // Process fines to get fine details (skip first 4 rows)
@@ -77,9 +101,53 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
+    // Process bank payments
+    bankData.forEach((row: any) => {
+      const description = String(row.Description || '').trim();
+      const payment = parseCurrency(row.In);
+      const date = String(row.Date || '').trim();
+
+      if (!description || payment === 0) return;
+
+      // Try to match player name from description
+      for (const [key, player] of playerMap.entries()) {
+        const playerNameLower = normalizePlayerName(player.name);
+        const descriptionLower = normalizePlayerName(description);
+
+        // Check if description contains player name or parts of it
+        const nameParts = player.name.split(' ');
+        const matchesName = nameParts.some(part =>
+          part.length > 1 && descriptionLower.includes(normalizePlayerName(part))
+        );
+
+        if (matchesName || descriptionLower.includes(playerNameLower)) {
+          player.paymentDetails.push({ date, amount: payment, description });
+          break;
+        }
+      }
+    });
+
     // Calculate total fines from fine details
     for (const player of playerMap.values()) {
       player.fines = player.fineDetails.reduce((sum, fine) => sum + fine.amount, 0);
+
+      // Sort match details by date (most recent first)
+      player.matchDetails.sort((a, b) => {
+        const [dayA, monthA, yearA] = a.date.split('/').map(Number);
+        const [dayB, monthB, yearB] = b.date.split('/').map(Number);
+        const dateA = new Date(yearA, monthA - 1, dayA);
+        const dateB = new Date(yearB, monthB - 1, dayB);
+        return dateB.getTime() - dateA.getTime();
+      });
+
+      // Sort payment details by date (most recent first)
+      player.paymentDetails.sort((a, b) => {
+        const [dayA, monthA, yearA] = a.date.split('/').map(Number);
+        const [dayB, monthB, yearB] = b.date.split('/').map(Number);
+        const dateA = new Date(yearA, monthA - 1, dayA);
+        const dateB = new Date(yearB, monthB - 1, dayB);
+        return dateB.getTime() - dateA.getTime();
+      });
     }
 
     // Convert to array and sort by balance (highest debt first)
