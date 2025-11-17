@@ -13,6 +13,11 @@ export default function FinesPage() {
     async function loadData() {
       try {
         const data = await getPlayerFines();
+        console.log('Fines data received:', data);
+        console.log('Number of players with fines:', data.length);
+        if (data.length > 0) {
+          console.log('First player:', data[0]);
+        }
         setPlayers(data);
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Failed to load fines data');
@@ -70,6 +75,29 @@ export default function FinesPage() {
         <p className="opacity-90">
           Tap a player to see detailed breakdown of all fines
         </p>
+      </div>
+
+      {/* Debug Info */}
+      <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <h3 className="font-semibold text-blue-900 mb-2">Debug Info</h3>
+        <div className="text-sm text-blue-800">
+          <p>Players loaded: {players.length}</p>
+          {players.length > 0 && (
+            <>
+              <p className="mt-2">First player: {players[0].name}</p>
+              <p>Total fines: {formatCurrency(players[0].totalFines)}</p>
+              <p>Number of fines: {players[0].fineCount}</p>
+              {players[0].fineDetails.length > 0 && (
+                <div className="mt-2">
+                  <p className="font-semibold">First fine detail:</p>
+                  <p className="ml-4">Date: {players[0].fineDetails[0].date}</p>
+                  <p className="ml-4">Amount: {formatCurrency(players[0].fineDetails[0].amount)}</p>
+                  <p className="ml-4">Description: {players[0].fineDetails[0].description}</p>
+                </div>
+              )}
+            </>
+          )}
+        </div>
       </div>
 
       {/* Summary Stats */}

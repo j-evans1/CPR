@@ -47,7 +47,7 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       fetchCSV(CSV_URLS.PLAYER_DATA),
       fetchCSV(CSV_URLS.MATCH_DETAILS),
       fetchCSV(CSV_URLS.BANK_STATEMENT, false), // false = no headers, access by index
-      fetchCSV(CSV_URLS.FINES),
+      fetchCSV(CSV_URLS.FINES, false), // false = no headers, access by index
     ]);
 
     const playerMap = new Map<string, PlayerPaymentDetail>();
@@ -142,37 +142,70 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
     });
 
     // Process fines data
-    // The Fines CSV has the same structure as Match Details - skip first 3 rows
-    // PapaParse will use column indices like _2, _3, _4, _5 since first row isn't proper headers
-    const finesRows = finesData.slice(3);
+    // Skip first 4 rows: 2 header rows + 1 empty row + 1 column header row
+    // PapaParse with headers=false uses 0-based array indices
+    console.log('Payment processor - First 6 rows of fines data:', finesData.slice(0, 6));
+    const finesRows = finesData.slice(4);
+    console.log('Payment processor - Processing fines rows:', finesRows.slice(0, 3));
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     finesRows.forEach((row: any) => {
-      // Column indices: _1 is empty, _2 is Date, _3 is Fines, _4 is Description, _5 is Player
-      const playerName = String(row._5 || '').trim();
-      const fine = parseCurrency(row._3);
-      const date = String(row._2 || '').trim();
-      const description = String(row._4 || '').trim();
+      // When headers=false, PapaParse returns arrays
+      // Column indices: 0 is empty, 1 is Date, 2 is Fines, 3 is Description, 4 is Player
+      const playerName = String(row[4] || '').trim();
+      const fine = parseCurrency(row[2]);
+      const date = String(row[1] || '').trim();
+      const description = String(row[3] || '').trim();
+      console.log('Processing fine for:', playerName, 'Amount:', fine, 'Date:', date);
 
-      if (!playerName || !date) return;
+      if (!playerName || !date) {
+        console.log('Skipping fine - missing player or date');
+        return;
+      }
+      if (fine <= 0) {
+        console.log('Skipping fine - amount is 0 or negative');
+        return;
+      }
 
       const normalized = normalizePlayerName(playerName);
       const player = playerMap.get(normalized);
+      console.log('Looking for player:', playerName, 'Normalized:', normalized, 'Found:', !!player);
 
-      if (player && fine > 0) {
+      if (player) {
+        console.log('Adding fine to player:', player.name, 'Fine amount:', fine);
         player.fines += fine;
         player.fineDetails.push({ date, amount: fine, description });
+      } else {
+        console.log('Player not found in map for:', playerName);
       }
     });
 
     // Calculate season fees and update totalOwed
+    console.log('=== Final player fines summary ===');
     for (const player of playerMap.values()) {
+      if (player.fines > 0) {
+        console.log(`${player.name}: £${player.fines.toFixed(2)} (${player.fineDetails.length} fines)`);
+      }
+
       // Apply season fee if player has played more than threshold number of games
       player.seasonFees = player.matchCount > SEASON_CONFIG.SEASON_FEE_THRESHOLD
         ? SEASON_CONFIG.SEASON_FEE
         : 0;
 
-      // Update totalOwed to include season fees and fines
-      player.totalOwed = player.matchFees + player.seasonFees + player.fines;
+      // Update totalOwed to include season fees (fines are already in matchFees from CSV)
+      const oldTotal = player.totalOwed;
+      player.totalOwed = player.matchFees + player.seasonFees;
+
+      // Recalculate balance as Total Owed - Total Paid
+      player.balance = player.totalOwed - player.paid;
+
+      console.log(`${player.name} Total Calculation:`, {
+        matchFees: player.matchFees,
+        seasonFees: player.seasonFees,
+        fines: player.fines,
+        calculatedTotal: player.totalOwed,
+        previousTotal: oldTotal,
+        matchDetailsSum: player.matchDetails.reduce((sum, m) => sum + m.fee, 0)
+      });
 
       // Sort match details by date (oldest first)
       player.matchDetails.sort((a, b) => {

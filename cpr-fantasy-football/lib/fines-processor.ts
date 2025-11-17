@@ -33,22 +33,26 @@ function normalizePlayerName(name: string): string {
 export async function getPlayerFines(): Promise<PlayerFineDetail[]> {
   try {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const finesData = await fetchCSV<any>(CSV_URLS.FINES);
+    const finesData = await fetchCSV<any>(CSV_URLS.FINES, false);
 
     const playerMap = new Map<string, PlayerFineDetail>();
 
     // Process fines data
-    // The Fines CSV has the same structure as Match Details - skip first 3 rows
-    // PapaParse will use column indices like _2, _3, _4, _5 since first row isn't proper headers
-    const finesRows = finesData.slice(3);
+    // Skip first 4 rows: 2 header rows + 1 empty row + 1 column header row
+    // PapaParse with headers=false uses 0-based array indices
+    console.log('First 6 rows of fines data:', finesData.slice(0, 6));
+    const finesRows = finesData.slice(4);
+    console.log('Processing rows (after skipping 4):', finesRows.slice(0, 3));
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     finesRows.forEach((row: any) => {
-      // Column indices: _1 is empty, _2 is Date, _3 is Fines, _4 is Description, _5 is Player
-      const playerName = String(row._5 || '').trim();
-      const fine = parseCurrency(row._3);
-      const date = String(row._2 || '').trim();
-      const description = String(row._4 || '').trim();
+      // When headers=false, PapaParse returns arrays, not objects
+      // Column indices: 0 is empty, 1 is Date, 2 is Fines, 3 is Description, 4 is Player
+      console.log('Processing row:', row);
+      const playerName = String(row[4] || '').trim();
+      const fine = parseCurrency(row[2]);
+      const date = String(row[1] || '').trim();
+      const description = String(row[3] || '').trim();
 
       if (!playerName || !date) return;
       if (fine <= 0) return; // Skip rows with no fine amount
