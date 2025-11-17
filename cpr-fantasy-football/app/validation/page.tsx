@@ -1,7 +1,8 @@
 import { fetchCSV } from '@/lib/data-fetcher';
 import { CSV_URLS } from '@/lib/constants';
 import { getPlayerStats } from '@/lib/data-processor';
-import { getPlayerPayments } from '@/lib/payment-processor';
+import { getPlayerPayments, PlayerPaymentDetail } from '@/lib/payment-processor';
+import { PlayerStat } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -19,18 +20,19 @@ export default async function ValidationPage() {
 
   try {
     // Fetch data from app processors
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const [playerStats, playerPayments, playerData] = await Promise.all<any>([
+    const [playerStats, playerPayments, playerData] = await Promise.all([
       getPlayerStats(),
       getPlayerPayments(),
       fetchCSV(CSV_URLS.PLAYER_DATA),
     ]);
 
     // Create lookup maps
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const statsMap = new Map(playerStats.map((p: any) => [p.name.toLowerCase().trim(), p]));
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const paymentsMap = new Map(playerPayments.map((p: any) => [p.name.toLowerCase().trim(), p]));
+    const statsMap = new Map<string, PlayerStat>(
+      playerStats.map(p => [p.name.toLowerCase().trim(), p])
+    );
+    const paymentsMap = new Map<string, PlayerPaymentDetail>(
+      playerPayments.map(p => [p.name.toLowerCase().trim(), p])
+    );
 
     // Validate each player from the spreadsheet
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
