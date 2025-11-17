@@ -8,6 +8,10 @@ export interface PlayerStat {
   cleanSheets: number;
   yellowCards: number;
   redCards: number;
+  mom1: number;
+  mom2: number;
+  mom3: number;
+  dod: number;
   fantasyPoints: number;
 }
 

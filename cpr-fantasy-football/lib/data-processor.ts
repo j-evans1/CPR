@@ -38,6 +38,10 @@ export async function getPlayerStats(): Promise<PlayerStat[]> {
           cleanSheets: 0,
           yellowCards: 0,
           redCards: 0,
+          mom1: 0,
+          mom2: 0,
+          mom3: 0,
+          dod: 0,
           fantasyPoints: 0,
         };
         playerStatsMap.set(playerName, playerStat);
@@ -50,6 +54,10 @@ export async function getPlayerStats(): Promise<PlayerStat[]> {
       const yellowCard = parseNumber(row[MATCH_COLUMNS.YELLOW_CARD]);
       const redCard = parseNumber(row[MATCH_COLUMNS.RED_CARD]);
       const cleanSheet = parseNumber(row[MATCH_COLUMNS.CLEAN_SHEET]);
+      const mom = parseNumber(row[MATCH_COLUMNS.MOM]);
+      const mom2 = parseNumber(row[MATCH_COLUMNS.MOM_2]);
+      const mom3 = parseNumber(row[MATCH_COLUMNS.MOM_3]);
+      const dod = parseNumber(row[MATCH_COLUMNS.DOD]);
       const totalPoints = parseNumber(row[MATCH_COLUMNS.TOTAL_POINTS]);
 
       // Aggregate stats
@@ -59,6 +67,10 @@ export async function getPlayerStats(): Promise<PlayerStat[]> {
       if (cleanSheet > 0) playerStat.cleanSheets += cleanSheet;
       if (yellowCard > 0) playerStat.yellowCards += yellowCard;
       if (redCard > 0) playerStat.redCards += redCard;
+      if (mom > 0) playerStat.mom1 += mom;
+      if (mom2 > 0) playerStat.mom2 += mom2;
+      if (mom3 > 0) playerStat.mom3 += mom3;
+      if (dod > 0) playerStat.dod += dod;
       playerStat.fantasyPoints += totalPoints;
     });
 

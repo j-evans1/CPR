@@ -39,12 +39,16 @@ export default async function Home() {
           <table className="min-w-full bg-white">
             <thead className="bg-navy text-white">
               <tr>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Rank</th>
-                <th className="px-6 py-4 text-left text-sm font-semibold">Player</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold sticky left-0 z-10 bg-navy">Rank</th>
+                <th className="px-6 py-4 text-left text-sm font-semibold sticky left-[72px] z-10 bg-navy">Player</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Apps</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Goals</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Assists</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Clean Sheets</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold">MoM 1</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold">MoM 2</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold">MoM 3</th>
+                <th className="px-6 py-4 text-center text-sm font-semibold">DoD</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Yellow Cards</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold">Red Cards</th>
                 <th className="px-6 py-4 text-center text-sm font-semibold bg-navy/90">Fantasy Points</th>
@@ -58,13 +62,13 @@ export default async function Home() {
                     index < 3 ? 'bg-yellow-50' : ''
                   }`}
                 >
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 sticky left-0 z-10 bg-inherit">
                     {index === 0 && '🥇'}
                     {index === 1 && '🥈'}
                     {index === 2 && '🥉'}
                     {index > 2 && index + 1}
                   </td>
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900 sticky left-[72px] z-10 bg-inherit">
                     {player.name}
                   </td>
                   <td className="px-6 py-4 text-sm text-center text-gray-700">
@@ -78,6 +82,18 @@ export default async function Home() {
                   </td>
                   <td className="px-6 py-4 text-sm text-center text-gray-700">
                     {player.cleanSheets}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-center text-gray-700">
+                    {player.mom1}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-center text-gray-700">
+                    {player.mom2}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-center text-gray-700">
+                    {player.mom3}
+                  </td>
+                  <td className="px-6 py-4 text-sm text-center text-gray-700">
+                    {player.dod}
                   </td>
                   <td className="px-6 py-4 text-sm text-center text-gray-700">
                     {player.yellowCards}
