@@ -66,7 +66,7 @@ export default function TeamCard({ team, index }: TeamCardProps) {
         <div className="border-t border-gray-200 bg-gray-50">
           <div className="p-3">
             <h4 className="font-semibold text-xs text-gray-700 mb-2 uppercase tracking-wide">
-              Team Roster
+              Team
             </h4>
             <div className="space-y-1">
               {team.players.map((player, idx) => (
