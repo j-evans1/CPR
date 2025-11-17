@@ -21,6 +21,7 @@ export interface MatchDetail {
   cleanSheet: boolean;
   yellowCard: boolean;
   redCard: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   [key: string]: any; // Allow for additional fields
 }
 

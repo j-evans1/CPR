@@ -13,6 +13,8 @@ export default function Navigation() {
     { name: 'Fantasy League', href: '/league' },
     { name: 'Match Results', href: '/matches' },
     { name: 'Payments', href: '/payments' },
+    { name: 'Fines', href: '/fines' },
+    { name: 'Validation', href: '/validation' },
   ];
 
   const isActive = (href: string) => {

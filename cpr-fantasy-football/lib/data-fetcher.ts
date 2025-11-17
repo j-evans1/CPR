@@ -1,7 +1,13 @@
 import Papa from 'papaparse';
 
-// Generic CSV fetcher with caching
-export async function fetchCSV<T = any>(url: string): Promise<T[]> {
+/**
+ * Generic CSV fetcher using PapaParse
+ * @param url - The URL of the CSV file to fetch
+ * @param useHeaders - Whether the CSV has headers (default: true). If false, columns are accessed by index
+ * @returns Promise resolving to array of parsed CSV rows
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export async function fetchCSV<T = any>(url: string, useHeaders: boolean = true): Promise<T[]> {
   try {
     const response = await fetch(url, {
       cache: 'no-store', // Always fetch fresh data
@@ -15,7 +21,7 @@ export async function fetchCSV<T = any>(url: string): Promise<T[]> {
 
     return new Promise((resolve, reject) => {
       Papa.parse(csvText, {
-        header: true,
+        header: useHeaders,
         dynamicTyping: true,
         skipEmptyLines: true,
         complete: (results) => {
@@ -32,13 +38,23 @@ export async function fetchCSV<T = any>(url: string): Promise<T[]> {
   }
 }
 
-// Helper to clean and normalize strings
+/**
+ * Clean and normalize strings for comparison
+ * @param str - String to normalize
+ * @returns Trimmed lowercase string
+ */
 export function normalizeString(str: string | null | undefined): string {
   if (!str) return '';
   return str.trim().toLowerCase();
 }
 
-// Helper to parse numeric values
+/**
+ * Parse numeric values from various formats
+ * Handles currency symbols (£, $) and comma separators
+ * @param value - Value to parse (string or number)
+ * @returns Parsed number, or 0 if parsing fails
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function parseNumber(value: any): number {
   if (typeof value === 'number') return value;
   if (typeof value === 'string') {

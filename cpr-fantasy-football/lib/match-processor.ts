@@ -1,5 +1,5 @@
 import { fetchCSV } from './data-fetcher';
-import { CSV_URLS } from './constants';
+import { CSV_URLS, MATCH_COLUMNS } from './constants';
 
 export interface MatchPlayerPerformance {
   name: string;
@@ -23,7 +23,9 @@ export interface Match {
   players: MatchPlayerPerformance[];
 }
 
-// Parse score from match description (e.g., "CPR 3v2 Opponent" or "CPRA 4v4 Opponent")
+/**
+ * Parse score from match description (e.g., "CPR 3v2 Opponent" or "CPRA 4v4 Opponent")
+ */
 function parseScore(matchDescription: string): { team: 'CPR' | 'CPRA'; cpr: number; opponentScore: number; opponentName: string } {
   // Try to match CPRA first (more specific), then CPR
   const cpraMatch = matchDescription.match(/CPRA\s+(\d+)v(\d+)\s+(.+)/i);
@@ -55,28 +57,33 @@ function parseScore(matchDescription: string): { team: 'CPR' | 'CPRA'; cpr: numb
   };
 }
 
-// Fetch and process match data
+/**
+ * Fetches and processes match data with player performances
+ * @returns Array of matches sorted by date (most recent first)
+ */
 export async function getMatches(): Promise<Match[]> {
   try {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const matchData = await fetchCSV<any>(CSV_URLS.MATCH_DETAILS);
 
     // Skip first 3 rows (headers)
     const dataRows = matchData.slice(3);
 
-    // Group by match (date + game)
+    // Group by match (date + game description)
     const matchesMap = new Map<string, Match>();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     dataRows.forEach((row: any) => {
-      const date = String(row._1 || '').trim();
-      const gameweek = String(row._3 || '').trim();
-      const matchDescription = String(row._4 || '').trim();
-      const playerName = String(row._5 || '').trim();
+      const date = String(row[MATCH_COLUMNS.DATE] || '').trim();
+      const gameweek = String(row[MATCH_COLUMNS.GAMEWEEK] || '').trim();
+      const matchDescription = String(row[MATCH_COLUMNS.GAME] || '').trim();
+      const playerName = String(row[MATCH_COLUMNS.PLAYER] || '').trim();
 
       if (!date || !matchDescription || !playerName) return;
 
       const matchKey = `${date}-${matchDescription}`;
 
-      // Create match if it doesn't exist
+      // Create match entry if it doesn't exist
       if (!matchesMap.has(matchKey)) {
         const { team, cpr, opponentScore: oppScore, opponentName: oppName } = parseScore(matchDescription);
         matchesMap.set(matchKey, {
@@ -93,16 +100,16 @@ export async function getMatches(): Promise<Match[]> {
 
       const match = matchesMap.get(matchKey)!;
 
-      // Add player performance
+      // Add player performance using column constants
       match.players.push({
         name: playerName,
-        appearance: Number(row._6) || 0,
-        goals: Number(row._7) || 0,
-        assists: Number(row._8) || 0,
-        cleanSheet: Number(row._16) || 0,
-        yellowCard: Number(row._13) || 0,
-        redCard: Number(row._14) || 0,
-        points: Number(row._28) || 0,
+        appearance: Number(row[MATCH_COLUMNS.APPEARANCE]) || 0,
+        goals: Number(row[MATCH_COLUMNS.GOALS]) || 0,
+        assists: Number(row[MATCH_COLUMNS.ASSISTS]) || 0,
+        cleanSheet: Number(row[MATCH_COLUMNS.CLEAN_SHEET]) || 0,
+        yellowCard: Number(row[MATCH_COLUMNS.YELLOW_CARD]) || 0,
+        redCard: Number(row[MATCH_COLUMNS.RED_CARD]) || 0,
+        points: Number(row[MATCH_COLUMNS.TOTAL_POINTS]) || 0,
       });
     });
 

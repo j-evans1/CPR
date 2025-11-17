@@ -1,6 +1,5 @@
 import { fetchCSV } from './data-fetcher';
 import { CSV_URLS } from './constants';
-import { getPlayerStats } from './data-processor';
 
 export interface FantasyTeamPlayer {
   name: string;
@@ -17,16 +16,21 @@ export interface FantasyTeam {
   rank: number;
 }
 
-// Fetch and process fantasy league data
+/**
+ * Fetches and processes fantasy league team data
+ * @returns Array of fantasy teams sorted by total points (highest first)
+ */
 export async function getFantasyLeague(): Promise<FantasyTeam[]> {
   try {
     // Fetch team selection data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamData = await fetchCSV<any>(CSV_URLS.TEAM_SELECTION);
 
     // The CSV structure is: each row is a player on a team
     // Columns: Team Name, Manager, Players, Price, Position, ..., Total-Points, Team-Points
     const teamsMap = new Map<string, FantasyTeam>();
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     teamData.forEach((row: any) => {
       const teamName = String(row['Team Name'] || '').trim();
       const managerName = String(row['Manager'] || '').trim();

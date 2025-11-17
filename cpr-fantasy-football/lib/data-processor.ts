@@ -1,28 +1,33 @@
 import { PlayerStat } from './types';
 import { fetchCSV, parseNumber } from './data-fetcher';
-import { CSV_URLS } from './constants';
+import { CSV_URLS, MATCH_COLUMNS } from './constants';
 
-// Fetch and process player stats
+/**
+ * Fetches and aggregates player statistics from match data and player data
+ * Includes Misc-Points from Player Data CSV for manual adjustments
+ * @returns Array of player stats sorted by fantasy points (highest first)
+ */
 export async function getPlayerStats(): Promise<PlayerStat[]> {
   try {
-    // Fetch match data
-    const matchData = await fetchCSV<any>(CSV_URLS.MATCH_DETAILS);
+    // Fetch both match data and player data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [matchData, playerData] = await Promise.all<any>([
+      fetchCSV(CSV_URLS.MATCH_DETAILS),
+      fetchCSV(CSV_URLS.PLAYER_DATA),
+    ]);
 
-    // Skip first 3 rows (headers and empty rows) and process actual data
+    // Skip first 3 rows (headers and empty rows) and process actual match data
     const dataRows = matchData.slice(3);
 
-    // Aggregate player stats
     const playerStatsMap = new Map<string, PlayerStat>();
 
-    dataRows.forEach((row: any, index: number) => {
-      // Column mapping based on the actual CSV structure
-      const playerName = cleanPlayerName(row._5); // Player name is in column _5
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    dataRows.forEach((row: any) => {
+      const playerName = cleanPlayerName(row[MATCH_COLUMNS.PLAYER]);
 
-      if (!playerName) {
-        return; // Skip rows without player name
-      }
+      if (!playerName) return; // Skip rows without player name
 
-      // Get or create player stat
+      // Get or create player stat entry
       let playerStat = playerStatsMap.get(playerName);
       if (!playerStat) {
         playerStat = {
@@ -38,16 +43,16 @@ export async function getPlayerStats(): Promise<PlayerStat[]> {
         playerStatsMap.set(playerName, playerStat);
       }
 
-      // Parse match stats from the correct columns
-      const appearance = parseNumber(row._6); // Appearance
-      const goals = parseNumber(row._7); // Goals
-      const assists = parseNumber(row._8); // Assists
-      const yellowCard = parseNumber(row._13); // Yellow Card
-      const redCard = parseNumber(row._14); // Red Card
-      const cleanSheet = parseNumber(row._17); // Clean Sheet
-      const totalPoints = parseNumber(row._29); // Total Points (already calculated)
+      // Parse match stats using column constants
+      const appearance = parseNumber(row[MATCH_COLUMNS.APPEARANCE]);
+      const goals = parseNumber(row[MATCH_COLUMNS.GOALS]);
+      const assists = parseNumber(row[MATCH_COLUMNS.ASSISTS]);
+      const yellowCard = parseNumber(row[MATCH_COLUMNS.YELLOW_CARD]);
+      const redCard = parseNumber(row[MATCH_COLUMNS.RED_CARD]);
+      const cleanSheet = parseNumber(row[MATCH_COLUMNS.CLEAN_SHEET]);
+      const totalPoints = parseNumber(row[MATCH_COLUMNS.TOTAL_POINTS]);
 
-      // Update stats
+      // Aggregate stats
       if (appearance > 0) playerStat.appearances += appearance;
       playerStat.goals += goals;
       playerStat.assists += assists;
@@ -57,7 +62,21 @@ export async function getPlayerStats(): Promise<PlayerStat[]> {
       playerStat.fantasyPoints += totalPoints;
     });
 
-    // Convert map to array and sort by fantasy points
+    // Add Misc-Points from Player Data CSV
+    // This allows manual adjustments to be reflected in fantasy points
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    playerData.forEach((row: any) => {
+      const playerName = cleanPlayerName(row.Player);
+      if (!playerName) return;
+
+      const playerStat = playerStatsMap.get(playerName);
+      if (playerStat) {
+        const miscPoints = parseNumber(row['Misc-Points']);
+        playerStat.fantasyPoints += miscPoints;
+      }
+    });
+
+    // Convert to array and sort by fantasy points (descending)
     return Array.from(playerStatsMap.values()).sort(
       (a, b) => b.fantasyPoints - a.fantasyPoints
     );
@@ -67,7 +86,10 @@ export async function getPlayerStats(): Promise<PlayerStat[]> {
   }
 }
 
-// Clean and normalize player names
+/**
+ * Clean and normalize player names
+ */
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function cleanPlayerName(name: any): string {
   if (!name) return '';
   return String(name).trim();
