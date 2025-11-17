@@ -67,8 +67,15 @@ export async function getFantasyLeague(): Promise<FantasyTeam[]> {
       }
     });
 
-    // Convert map to array and sort by total points
+    // Calculate total points from players and convert to array
     const teams = Array.from(teamsMap.values());
+
+    // Calculate each team's total points from their players
+    teams.forEach(team => {
+      team.totalPoints = team.players.reduce((sum, player) => sum + player.points, 0);
+    });
+
+    // Sort by total points
     teams.sort((a, b) => b.totalPoints - a.totalPoints);
 
     // Assign ranks
