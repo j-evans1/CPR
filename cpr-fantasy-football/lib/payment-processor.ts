@@ -4,12 +4,11 @@ import { CSV_URLS } from './constants';
 export interface PlayerPaymentDetail {
   name: string;
   matchFees: number;
-  fines: number;
+  seasonFees: number;
   totalOwed: number;
   paid: number;
   balance: number;
   matchCount: number;
-  fineDetails: { date: string; amount: number; description: string }[];
   matchDetails: { date: string; fee: number; gameweek: string }[];
   paymentDetails: { date: string; amount: number; description: string }[];
 }
@@ -31,9 +30,8 @@ function normalizePlayerName(name: string): string {
 export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
   try {
     // Fetch all data sources
-    const [playerData, finesData, matchData, bankData] = await Promise.all([
+    const [playerData, matchData, bankData] = await Promise.all([
       fetchCSV<any>(CSV_URLS.PLAYER_DATA),
-      fetchCSV<any>(CSV_URLS.FINES),
       fetchCSV<any>(CSV_URLS.MATCH_DETAILS),
       fetchCSV<any>(CSV_URLS.BANK_STATEMENT),
     ]);
@@ -54,12 +52,11 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       playerMap.set(normalized, {
         name: playerName,
         matchFees: fees,
-        fines: 0,
+        seasonFees: 0, // Will be calculated later
         totalOwed: fees,
         paid: payments,
         balance: due,
         matchCount: appearance,
-        fineDetails: [],
         matchDetails: [],
         paymentDetails: [],
       });
@@ -80,26 +77,6 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
 
       if (player && fee > 0) {
         player.matchDetails.push({ date, fee, gameweek });
-      }
-    });
-
-    // Process fines - sum column C (Fines) by column E (Player name)
-    finesData.forEach((row: any, index: number) => {
-      // Skip header rows (first 4 rows)
-      if (index < 4) return;
-
-      // Column mapping: _3=Fines (column C), _5=Player (column E)
-      const fine = parseCurrency(row._3);
-      const playerName = String(row._5 || '').trim();
-
-      // Skip if no player name or no fine amount
-      if (!playerName || fine === 0) return;
-
-      const normalized = normalizePlayerName(playerName);
-      const player = playerMap.get(normalized);
-
-      if (player) {
-        player.fines += fine;
       }
     });
 
@@ -144,10 +121,13 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Update totalOwed to include fines and sort details
+    // Calculate season fees and update totalOwed
     for (const player of playerMap.values()) {
-      // Update totalOwed to include fines
-      player.totalOwed = player.matchFees + player.fines;
+      // Season fee is £50 if player has played more than 3 games
+      player.seasonFees = player.matchCount > 3 ? 50 : 0;
+
+      // Update totalOwed to include season fees
+      player.totalOwed = player.matchFees + player.seasonFees;
 
       // Sort match details by date (oldest first)
       player.matchDetails.sort((a, b) => {

@@ -54,7 +54,7 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
               <div className="text-sm text-gray-600 mb-1">Total Owed</div>
               <div className="text-2xl font-bold text-red-700">{formatCurrency(player.totalOwed)}</div>
               <div className="text-xs text-gray-500 mt-1">
-                Fees: {formatCurrency(player.matchFees)} + Fines: {formatCurrency(player.fines)}
+                Match Fees: {formatCurrency(player.matchFees)} + Season Fee: {formatCurrency(player.seasonFees)}
               </div>
             </div>
             <div className="bg-green-50 border border-green-200 rounded-lg p-4">
@@ -105,9 +105,15 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
                         <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(match.fee)}</td>
                       </tr>
                     ))}
+                    {player.seasonFees > 0 && (
+                      <tr className="border-t border-gray-200 bg-blue-50">
+                        <td colSpan={2} className="px-3 py-2 text-gray-900">Season Fee</td>
+                        <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(player.seasonFees)}</td>
+                      </tr>
+                    )}
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
-                      <td colSpan={2} className="px-3 py-2 font-semibold text-gray-900">Total Match Fees</td>
-                      <td className="px-3 py-2 text-right font-bold text-navy">{formatCurrency(player.matchFees)}</td>
+                      <td colSpan={2} className="px-3 py-2 font-semibold text-gray-900">Total</td>
+                      <td className="px-3 py-2 text-right font-bold text-navy">{formatCurrency(player.matchFees + player.seasonFees)}</td>
                     </tr>
                   </tbody>
                 </table>
