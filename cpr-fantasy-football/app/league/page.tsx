@@ -1,10 +1,10 @@
-import { getFantasyLeague } from '@/lib/fantasy-processor';
+import { getFantasyLeague, FantasyTeam } from '@/lib/fantasy-processor';
 import TeamCard from '@/components/TeamCard';
 
 export const dynamic = 'force-dynamic';
 
 export default async function LeaguePage() {
-  let teams = [];
+  let teams: FantasyTeam[] = [];
   let error: string | null = null;
 
   try {
