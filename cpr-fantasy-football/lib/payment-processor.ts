@@ -83,45 +83,17 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Process fines - just sum up fine amounts by player, ignore dates/descriptions
+    // Process fines - sum column C (Fines) by column E (Player name)
     finesData.forEach((row: any, index: number) => {
       // Skip header rows (first 4 rows)
       if (index < 4) return;
 
-      // Column mapping: _3=Fines, _4=Description, _5=Player
+      // Column mapping: _3=Fines (column C), _5=Player (column E)
       const fine = parseCurrency(row._3);
-      let playerName = String(row._5 || '').trim();
-      const description = String(row._4 || '').trim();
+      const playerName = String(row._5 || '').trim();
 
-      if (fine === 0) return;
-
-      // If Player column is empty, try to extract player name from description
-      if (!playerName && description) {
-        // Try to match player names from the description
-        for (const [key, player] of playerMap.entries()) {
-          const descriptionLower = normalizePlayerName(description);
-          const playerNameLower = normalizePlayerName(player.name);
-
-          // Check if description starts with or contains the player name
-          // Also check for first name matches (e.g., "Ari" for "A. Cela")
-          const nameParts = player.name.split(/[\s.]+/).filter(p => p.length > 1);
-          const matchesName = nameParts.some(part => {
-            const partLower = normalizePlayerName(part);
-            return partLower.length > 2 && (
-              descriptionLower.startsWith(partLower + ' ') ||
-              descriptionLower.startsWith(partLower + ' -') ||
-              descriptionLower.includes(' ' + partLower + ' ')
-            );
-          });
-
-          if (matchesName || descriptionLower.startsWith(playerNameLower)) {
-            playerName = player.name;
-            break;
-          }
-        }
-      }
-
-      if (!playerName) return;
+      // Skip if no player name or no fine amount
+      if (!playerName || fine === 0) return;
 
       const normalized = normalizePlayerName(playerName);
       const player = playerMap.get(normalized);
@@ -172,8 +144,11 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
-    // Sort match and payment details
+    // Update totalOwed to include fines and sort details
     for (const player of playerMap.values()) {
+      // Update totalOwed to include fines
+      player.totalOwed = player.matchFees + player.fines;
+
       // Sort match details by date (oldest first)
       player.matchDetails.sort((a, b) => {
         const [dayA, monthA, yearA] = a.date.split('/').map(Number);
