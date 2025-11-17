@@ -56,6 +56,6 @@ export const BANK_COLUMNS = {
 // Season Configuration
 export const SEASON_CONFIG = {
   SEASON_FEE: 50,
-  SEASON_FEE_THRESHOLD: 3, // Number of matches before season fee applies
+  SEASON_FEE_THRESHOLD: 1, // Number of matches before season fee applies
   PAYMENT_START_DATE: new Date(2025, 7, 1), // August 1, 2025
 } as const;
