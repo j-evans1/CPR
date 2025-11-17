@@ -1,19 +1,23 @@
 import { fetchCSV } from './data-fetcher';
-import { CSV_URLS } from './constants';
+import { CSV_URLS, MATCH_COLUMNS, BANK_COLUMNS, SEASON_CONFIG } from './constants';
 
 export interface PlayerPaymentDetail {
   name: string;
   matchFees: number;
   seasonFees: number;
+  fines: number;
   totalOwed: number;
   paid: number;
   balance: number;
   matchCount: number;
   matchDetails: { date: string; fee: number; gameweek: string }[];
   paymentDetails: { date: string; amount: number; description: string }[];
+  fineDetails: { date: string; amount: number; description: string }[];
 }
 
-// Parse currency string (e.g., "£12.00" -> 12.00)
+/**
+ * Parse currency string (e.g., "£12.00" -> 12.00)
+ */
 function parseCurrency(value: string): number {
   if (!value) return 0;
   const cleaned = String(value).replace(/[£,]/g, '').trim();
@@ -21,24 +25,35 @@ function parseCurrency(value: string): number {
   return isNaN(parsed) ? 0 : parsed;
 }
 
-// Normalize player names for matching
+/**
+ * Normalize player names for matching across different data sources
+ */
 function normalizePlayerName(name: string): string {
   if (!name) return '';
   return name.toLowerCase().trim();
 }
 
+/**
+ * Fetches and processes player payment information
+ * Combines data from player data, match fees, and bank statement
+ * @returns Array of player payment details sorted by balance (highest debt first)
+ */
 export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
   try {
     // Fetch all data sources
-    const [playerData, matchData, bankData] = await Promise.all([
-      fetchCSV<any>(CSV_URLS.PLAYER_DATA),
-      fetchCSV<any>(CSV_URLS.MATCH_DETAILS),
-      fetchCSV<any>(CSV_URLS.BANK_STATEMENT),
+    // Note: Bank statement CSV has no headers, so we fetch it without header parsing
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const [playerData, matchData, bankData, finesData] = await Promise.all<any[]>([
+      fetchCSV(CSV_URLS.PLAYER_DATA),
+      fetchCSV(CSV_URLS.MATCH_DETAILS),
+      fetchCSV(CSV_URLS.BANK_STATEMENT, false), // false = no headers, access by index
+      fetchCSV(CSV_URLS.FINES),
     ]);
 
     const playerMap = new Map<string, PlayerPaymentDetail>();
 
     // Process player data (has Fees, Payments, Due columns)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     playerData.forEach((row: any) => {
       const playerName = String(row.Player || '').trim();
       const fees = parseCurrency(row.Fees);
@@ -53,22 +68,26 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
         name: playerName,
         matchFees: fees,
         seasonFees: 0, // Will be calculated later
+        fines: 0, // Will be calculated from fines CSV
         totalOwed: fees,
         paid: payments,
         balance: due,
         matchCount: appearance,
         matchDetails: [],
         paymentDetails: [],
+        fineDetails: [],
       });
     });
+       
 
     // Process match details to get match fees per game (skip first 3 rows)
     const matchRows = matchData.slice(3);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     matchRows.forEach((row: any) => {
-      const playerName = String(row._5 || '').trim();
-      const fee = parseCurrency(row._2);
-      const date = String(row._1 || '').trim();
-      const gameweek = String(row._3 || '').trim();
+      const playerName = String(row[MATCH_COLUMNS.PLAYER] || '').trim();
+      const fee = parseCurrency(row[MATCH_COLUMNS.FEE]);
+      const date = String(row[MATCH_COLUMNS.DATE] || '').trim();
+      const gameweek = String(row[MATCH_COLUMNS.GAMEWEEK] || '').trim();
 
       if (!playerName || !date) return;
 
@@ -78,15 +97,17 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       if (player && fee > 0) {
         player.matchDetails.push({ date, fee, gameweek });
       }
+     
     });
 
     // Process bank payments
-    // Only process rows from 01/08/2025 onwards with Player name in column G
+    // Bank statement CSV has no headers, access by index using BANK_COLUMNS constants
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     bankData.forEach((row: any) => {
-      const description = String(row.Description || '').trim();
-      const payment = parseCurrency(row.In);
-      const date = String(row.Date || '').trim();
-      const playerNameFromBank = String(row.Player || '').trim();
+      const date = String(row[BANK_COLUMNS.DATE] || '').trim();
+      const description = String(row[BANK_COLUMNS.DESCRIPTION] || '').trim();
+      const payment = parseCurrency(row[BANK_COLUMNS.CREDIT]);
+      const playerNameFromBank = String(row[BANK_COLUMNS.PLAYER] || '').trim();
 
       // Skip if no player name in column G
       if (!playerNameFromBank) return;
@@ -107,10 +128,9 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       if (isNaN(day) || isNaN(month) || isNaN(year)) return;
 
       const rowDate = new Date(year, month - 1, day);
-      const cutoffDate = new Date(2025, 7, 1); // August 1, 2025 (month is 0-indexed)
 
-      // Only process dates from Aug 1, 2025 onwards
-      if (rowDate < cutoffDate) return;
+      // Only process dates from the configured payment start date onwards
+      if (rowDate < SEASON_CONFIG.PAYMENT_START_DATE) return;
 
       // Match player by the Player column in bank statement
       const normalized = normalizePlayerName(playerNameFromBank);
@@ -121,13 +141,34 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
       }
     });
 
+    // Process fines data (already has headers parsed by fetchCSV, no need to skip rows)
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    finesData.forEach((row: any) => {
+      const playerName = String(row.Player || '').trim();
+      const fine = parseCurrency(row.Fines);
+      const date = String(row.Date || '').trim();
+      const description = String(row.Description || '').trim();
+
+      if (!playerName || !date) return;
+
+      const normalized = normalizePlayerName(playerName);
+      const player = playerMap.get(normalized);
+
+      if (player && fine > 0) {
+        player.fines += fine;
+        player.fineDetails.push({ date, amount: fine, description });
+      }
+    });
+
     // Calculate season fees and update totalOwed
     for (const player of playerMap.values()) {
-      // Season fee is £50 if player has played more than 3 games
-      player.seasonFees = player.matchCount > 3 ? 50 : 0;
+      // Apply season fee if player has played more than threshold number of games
+      player.seasonFees = player.matchCount > SEASON_CONFIG.SEASON_FEE_THRESHOLD
+        ? SEASON_CONFIG.SEASON_FEE
+        : 0;
 
-      // Update totalOwed to include season fees
-      player.totalOwed = player.matchFees + player.seasonFees;
+      // Update totalOwed to include season fees and fines
+      player.totalOwed = player.matchFees + player.seasonFees + player.fines;
 
       // Sort match details by date (oldest first)
       player.matchDetails.sort((a, b) => {
@@ -140,6 +181,15 @@ export async function getPlayerPayments(): Promise<PlayerPaymentDetail[]> {
 
       // Sort payment details by date (oldest first)
       player.paymentDetails.sort((a, b) => {
+        const [dayA, monthA, yearA] = a.date.split('/').map(Number);
+        const [dayB, monthB, yearB] = b.date.split('/').map(Number);
+        const dateA = new Date(yearA, monthA - 1, dayA);
+        const dateB = new Date(yearB, monthB - 1, dayB);
+        return dateA.getTime() - dateB.getTime();
+      });
+
+      // Sort fine details by date (oldest first)
+      player.fineDetails.sort((a, b) => {
         const [dayA, monthA, yearA] = a.date.split('/').map(Number);
         const [dayB, monthB, yearB] = b.date.split('/').map(Number);
         const dateA = new Date(yearA, monthA - 1, dayA);
