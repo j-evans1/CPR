@@ -90,18 +90,18 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
                         <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(match.fee)}</td>
                       </tr>
                     ))}
+                    {player.seasonFees > 0 && (
+                      <tr className="border-t border-gray-200 bg-blue-50">
+                        <td colSpan={2} className="px-3 py-2 text-gray-900">Season Fee</td>
+                        <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(player.seasonFees)}</td>
+                      </tr>
+                    )}
                     {player.fines > 0 && (
                       <tr className="border-t border-gray-200 bg-red-50">
                         <td colSpan={2} className="px-3 py-2 text-gray-900">
                           Fines ({player.fineDetails.length})
                         </td>
                         <td className="px-3 py-2 text-right text-red-700 font-semibold">{formatCurrency(player.fines)}</td>
-                      </tr>
-                    )}
-                    {player.seasonFees > 0 && (
-                      <tr className="border-t border-gray-200 bg-blue-50">
-                        <td colSpan={2} className="px-3 py-2 text-gray-900">Season Fee</td>
-                        <td className="px-3 py-2 text-right text-navy font-semibold">{formatCurrency(player.seasonFees)}</td>
                       </tr>
                     )}
                     <tr className="border-t-2 border-gray-300 bg-gray-50">
@@ -118,16 +118,16 @@ export default function PlayerDetailModal({ player, onClose }: PlayerDetailModal
                     <span className="text-gray-600">Match Fees ({player.matchCount} matches)</span>
                     <span className="font-semibold text-navy">{formatCurrency(player.matchFees)}</span>
                   </div>
-                  {player.fines > 0 && (
-                    <div className="flex justify-between items-center">
-                      <span className="text-gray-600">Fines</span>
-                      <span className="font-semibold text-red-700">{formatCurrency(player.fines)}</span>
-                    </div>
-                  )}
                   {player.seasonFees > 0 && (
                     <div className="flex justify-between items-center">
                       <span className="text-gray-600">Season Fee</span>
                       <span className="font-semibold text-navy">{formatCurrency(player.seasonFees)}</span>
+                    </div>
+                  )}
+                  {player.fines > 0 && (
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-600">Fines ({player.fineDetails.length})</span>
+                      <span className="font-semibold text-red-700">{formatCurrency(player.fines)}</span>
                     </div>
                   )}
                   <div className="flex justify-between items-center pt-2 border-t border-gray-200">
