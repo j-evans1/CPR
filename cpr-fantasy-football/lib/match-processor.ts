@@ -14,6 +14,7 @@ export interface MatchPlayerPerformance {
 
 export interface Match {
   date: string;
+  team: 'CPR' | 'CPRA';
   opponent: string;
   score: string;
   cprScore: number;
@@ -22,17 +23,36 @@ export interface Match {
   players: MatchPlayerPerformance[];
 }
 
-// Parse score from match description (e.g., "CPR 3v2 Opponent" -> {cpr: 3, opponentScore: 2, opponentName: "Opponent"})
-function parseScore(matchDescription: string): { cpr: number; opponentScore: number; opponentName: string } {
-  const match = matchDescription.match(/CPR\s+(\d+)v(\d+)\s+(.+)/i);
-  if (match) {
+// Parse score from match description (e.g., "CPR 3v2 Opponent" or "CPRA 4v4 Opponent")
+function parseScore(matchDescription: string): { team: 'CPR' | 'CPRA'; cpr: number; opponentScore: number; opponentName: string } {
+  // Try to match CPRA first (more specific), then CPR
+  const cpraMatch = matchDescription.match(/CPRA\s+(\d+)v(\d+)\s+(.+)/i);
+  if (cpraMatch) {
     return {
-      cpr: parseInt(match[1], 10),
-      opponentScore: parseInt(match[2], 10),
-      opponentName: match[3].trim(),
+      team: 'CPRA',
+      cpr: parseInt(cpraMatch[1], 10),
+      opponentScore: parseInt(cpraMatch[2], 10),
+      opponentName: cpraMatch[3].trim(),
     };
   }
-  return { cpr: 0, opponentScore: 0, opponentName: matchDescription.replace(/^CPR\s+/i, '').trim() };
+
+  const cprMatch = matchDescription.match(/CPR\s+(\d+)v(\d+)\s+(.+)/i);
+  if (cprMatch) {
+    return {
+      team: 'CPR',
+      cpr: parseInt(cprMatch[1], 10),
+      opponentScore: parseInt(cprMatch[2], 10),
+      opponentName: cprMatch[3].trim(),
+    };
+  }
+
+  // Default to CPR if can't parse
+  return {
+    team: 'CPR',
+    cpr: 0,
+    opponentScore: 0,
+    opponentName: matchDescription.replace(/^CPR(A)?\s+/i, '').trim()
+  };
 }
 
 // Fetch and process match data
@@ -58,9 +78,10 @@ export async function getMatches(): Promise<Match[]> {
 
       // Create match if it doesn't exist
       if (!matchesMap.has(matchKey)) {
-        const { cpr, opponentScore: oppScore, opponentName: oppName } = parseScore(matchDescription);
+        const { team, cpr, opponentScore: oppScore, opponentName: oppName } = parseScore(matchDescription);
         matchesMap.set(matchKey, {
           date,
+          team,
           opponent: oppName,
           score: `${cpr}-${oppScore}`,
           cprScore: cpr,

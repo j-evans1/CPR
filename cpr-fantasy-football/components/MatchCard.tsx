@@ -38,10 +38,10 @@ export default function MatchCard({ match }: MatchCardProps) {
           </div>
           <div className="text-left flex-1">
             <div className="font-semibold text-gray-900">
-              CPR {match.score} {match.opponent}
+              {match.team} {match.score} {match.opponent}
             </div>
             <div className="text-sm text-gray-500">
-              {match.date} • {match.gameweek}
+              {match.date}
             </div>
           </div>
         </div>
