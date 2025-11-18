@@ -57,7 +57,7 @@ export default async function Home() {
             <tbody className="divide-y divide-slate-700">
               {playerStats.map((player, index) => {
                 const getRowColors = () => {
-                  if (index === 0) return { bg: 'bg-yellow-900/40', sticky: 'bg-yellow-900' }; // Gold
+                  if (index === 0) return { bg: 'bg-yellow-600/30', sticky: 'bg-yellow-600' }; // Gold
                   if (index === 1) return { bg: 'bg-gray-700/50', sticky: 'bg-gray-700' }; // Silver
                   if (index === 2) return { bg: 'bg-amber-900/40', sticky: 'bg-amber-900' }; // Bronze
                   return { bg: 'bg-slate-800', sticky: 'bg-slate-800' };
