@@ -21,6 +21,29 @@ export const metadata: Metadata = {
     maximumScale: 5,
     userScalable: true,
   },
+  openGraph: {
+    title: "CPR Fantasy Football 2025/26",
+    description: "Fantasy football league for CPR Saturday team",
+    images: [
+      {
+        url: "/cpr-badge.png",
+        width: 800,
+        height: 800,
+        alt: "CPR Football Club Badge",
+      },
+    ],
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "CPR Fantasy Football 2025/26",
+    description: "Fantasy football league for CPR Saturday team",
+    images: ["/cpr-badge.png"],
+  },
+  icons: {
+    icon: "/cpr-badge.png",
+    apple: "/cpr-badge.png",
+  },
 };
 
 export default function RootLayout({
