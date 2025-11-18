@@ -4,11 +4,13 @@ import { useState, useCallback, useEffect } from 'react';
 
 interface PongGameProps {
   onGameOver: () => void;
+  customEndMessage?: string;
+  requireClickToDismiss?: boolean;
 }
 
 type GameState = 'start' | 'waiting' | 'ready' | 'playing' | 'victory' | 'defeat';
 
-export default function PongGame({ onGameOver }: PongGameProps) {
+export default function PongGame({ onGameOver, customEndMessage, requireClickToDismiss }: PongGameProps) {
   const [gameState, setGameState] = useState<GameState>('start');
   const [round, setRound] = useState(1);
   const [reactionTimes, setReactionTimes] = useState<number[]>([]);
@@ -46,11 +48,15 @@ export default function PongGame({ onGameOver }: PongGameProps) {
         if (average < 300) {
           setGameState('victory');
           setMessage(`Amazing! Average: ${Math.round(average)}ms`);
-          setTimeout(() => onGameOver(), 2000);
+          if (!requireClickToDismiss) {
+            setTimeout(() => onGameOver(), 2000);
+          }
         } else {
           setGameState('defeat');
           setMessage(`Too slow! Average: ${Math.round(average)}ms`);
-          setTimeout(() => onGameOver(), 2000);
+          if (!requireClickToDismiss) {
+            setTimeout(() => onGameOver(), 2000);
+          }
         }
       } else {
         // Next round
@@ -72,9 +78,11 @@ export default function PongGame({ onGameOver }: PongGameProps) {
       // Clicked too early
       setGameState('defeat');
       setMessage('Too early! You lose!');
-      setTimeout(() => onGameOver(), 2000);
+      if (!requireClickToDismiss) {
+        setTimeout(() => onGameOver(), 2000);
+      }
     }
-  }, [gameState, currentStartTime, reactionTimes, round, onGameOver]);
+  }, [gameState, currentStartTime, reactionTimes, round, onGameOver, requireClickToDismiss]);
 
   const getCircleColor = () => {
     if (gameState === 'start') return 'bg-gray-400';
@@ -143,24 +151,64 @@ export default function PongGame({ onGameOver }: PongGameProps) {
       {/* Victory */}
       {gameState === 'victory' && (
         <div className="text-center">
-          <div className={`${getCircleColor()} w-64 h-64 rounded-full mx-auto mb-6 flex items-center justify-center`}>
-            <span className="text-6xl">🎉</span>
-          </div>
+          {customEndMessage ? (
+            <div className="w-80 h-80 mx-auto mb-6 flex items-center justify-center text-9xl">
+              🐌
+            </div>
+          ) : (
+            <div className={`${getCircleColor()} w-64 h-64 rounded-full mx-auto mb-6 flex items-center justify-center`}>
+              <span className="text-6xl">🎉</span>
+            </div>
+          )}
           <h2 className="text-5xl font-bold text-yellow-400 mb-4">You Win!</h2>
           <p className="text-white text-2xl mb-2">{message}</p>
-          <p className="text-gray-400 text-sm mt-4">Revealing fines...</p>
+          {customEndMessage ? (
+            <>
+              <p className="text-yellow-400 text-2xl font-bold mt-4">{customEndMessage}</p>
+              {requireClickToDismiss && (
+                <button
+                  onClick={onGameOver}
+                  className="mt-6 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors"
+                >
+                  Click to dismiss
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-400 text-sm mt-4">Revealing fines...</p>
+          )}
         </div>
       )}
 
       {/* Defeat */}
       {gameState === 'defeat' && (
         <div className="text-center">
-          <div className={`${getCircleColor()} w-64 h-64 rounded-full mx-auto mb-6 flex items-center justify-center`}>
-            <span className="text-6xl">😢</span>
-          </div>
+          {customEndMessage ? (
+            <div className="w-80 h-80 mx-auto mb-6 flex items-center justify-center text-9xl">
+              🐌
+            </div>
+          ) : (
+            <div className={`${getCircleColor()} w-64 h-64 rounded-full mx-auto mb-6 flex items-center justify-center`}>
+              <span className="text-6xl">😢</span>
+            </div>
+          )}
           <h2 className="text-5xl font-bold text-red-400 mb-4">Game Over</h2>
           <p className="text-white text-2xl mb-2">{message}</p>
-          <p className="text-gray-400 text-sm mt-4">Revealing fines...</p>
+          {customEndMessage ? (
+            <>
+              <p className="text-yellow-400 text-2xl font-bold mt-4">{customEndMessage}</p>
+              {requireClickToDismiss && (
+                <button
+                  onClick={onGameOver}
+                  className="mt-6 px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-bold rounded-lg transition-colors"
+                >
+                  Click to dismiss
+                </button>
+              )}
+            </>
+          ) : (
+            <p className="text-gray-400 text-sm mt-4">Revealing fines...</p>
+          )}
         </div>
       )}
     </div>

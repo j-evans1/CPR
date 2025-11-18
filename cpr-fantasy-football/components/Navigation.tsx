@@ -24,7 +24,7 @@ export default function Navigation() {
   };
 
   return (
-    <nav className="bg-white border-b border-gray-200">
+    <nav className="bg-slate-900 border-b border-slate-700">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           {/* Desktop Navigation */}
@@ -33,10 +33,10 @@ export default function Navigation() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                className={`px-4 py-2 rounded-md text-sm font-semibold uppercase tracking-wide transition-colors ${
                   isActive(item.href)
-                    ? 'bg-navy text-white'
-                    : 'text-gray-700 hover:bg-gray-100 hover:text-navy'
+                    ? 'bg-slate-700 text-white'
+                    : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                 }`}
               >
                 {item.name}
@@ -47,7 +47,7 @@ export default function Navigation() {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-navy"
+            className="md:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-300 hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-700"
             aria-expanded="false"
           >
             <span className="sr-only">Open main menu</span>
@@ -94,10 +94,10 @@ export default function Navigation() {
                   key={item.href}
                   href={item.href}
                   onClick={() => setMobileMenuOpen(false)}
-                  className={`block px-4 py-3 rounded-md text-base font-medium ${
+                  className={`block px-4 py-3 rounded-md text-base font-semibold uppercase tracking-wide ${
                     isActive(item.href)
-                      ? 'bg-navy text-white'
-                      : 'text-gray-700 hover:bg-gray-100 hover:text-navy'
+                      ? 'bg-slate-700 text-white'
+                      : 'text-gray-300 hover:bg-slate-800 hover:text-white'
                   }`}
                 >
                   {item.name}

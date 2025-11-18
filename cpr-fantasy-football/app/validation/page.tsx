@@ -148,10 +148,10 @@ export default async function ValidationPage() {
     return (
       <div>
         <div className="mb-6">
-          <h2 className="text-2xl font-bold text-navy mb-2">Data Validation</h2>
-          <p className="text-gray-600">Comparing app calculations vs spreadsheet values</p>
+          <h2 className="text-2xl font-bold text-slate-100 mb-2">Data Validation</h2>
+          <p className="text-gray-400">Comparing app calculations vs spreadsheet values</p>
         </div>
-        <div className="bg-red-50 border border-red-200 rounded-lg p-6">
+        <div className="bg-red-900/20 border border-red-800 rounded-lg p-6">
           <h3 className="text-xl font-bold text-red-800 mb-2">Validation Error</h3>
           <p className="text-red-700">{error}</p>
         </div>
@@ -162,17 +162,17 @@ export default async function ValidationPage() {
   return (
     <div>
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-navy mb-2">Data Validation</h2>
-        <p className="text-gray-600">Comparing app calculations vs spreadsheet values</p>
+        <h2 className="text-2xl font-bold text-slate-100 mb-2">Data Validation</h2>
+        <p className="text-gray-400">Comparing app calculations vs spreadsheet values</p>
       </div>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
         <div className={`rounded-lg p-6 text-center ${
-          mismatches.length === 0 ? 'bg-green-50 border-2 border-green-500' : 'bg-white border border-gray-200'
+          mismatches.length === 0 ? 'bg-green-50 border-2 border-green-500' : 'bg-slate-800 border border-slate-700'
         }`}>
           <div className="text-4xl font-bold text-navy mb-2">{passedChecks}/{totalChecks}</div>
-          <div className="text-sm text-gray-600">Checks Passed</div>
+          <div className="text-sm text-gray-400">Checks Passed</div>
         </div>
         <div className={`rounded-lg p-6 text-center ${
           mismatches.length === 0 ? 'bg-green-50 border-2 border-green-500' : 'bg-red-50 border-2 border-red-500'
@@ -180,7 +180,7 @@ export default async function ValidationPage() {
           <div className="text-4xl font-bold mb-2" style={{ color: mismatches.length === 0 ? '#16a34a' : '#dc2626' }}>
             {passRate}%
           </div>
-          <div className="text-sm text-gray-600">Pass Rate</div>
+          <div className="text-sm text-gray-400">Pass Rate</div>
         </div>
         <div className={`rounded-lg p-6 text-center ${
           mismatches.length === 0 ? 'bg-green-50 border-2 border-green-500' : 'bg-red-50 border-2 border-red-500'
@@ -188,7 +188,7 @@ export default async function ValidationPage() {
           <div className="text-4xl font-bold mb-2" style={{ color: mismatches.length === 0 ? '#16a34a' : '#dc2626' }}>
             {mismatches.length}
           </div>
-          <div className="text-sm text-gray-600">Mismatches</div>
+          <div className="text-sm text-gray-400">Mismatches</div>
         </div>
       </div>
 
@@ -214,19 +214,19 @@ export default async function ValidationPage() {
 
           {/* Mismatch Details */}
           <div className="mt-6">
-            <h4 className="font-semibold text-gray-900 mb-3">Mismatch Details:</h4>
+            <h4 className="font-semibold text-gray-100 mb-3">Mismatch Details:</h4>
             <div className="overflow-x-auto">
-              <table className="min-w-full bg-white border border-gray-200 rounded-lg">
+              <table className="min-w-full bg-slate-800 border border-slate-700 rounded-lg">
                 <thead className="bg-red-100">
                   <tr>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Player</th>
-                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-900">Field</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">App Value</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Spreadsheet</th>
-                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-900">Difference</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-100">Player</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-gray-100">Field</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-100">App Value</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-100">Spreadsheet</th>
+                    <th className="px-4 py-3 text-center text-sm font-semibold text-gray-100">Difference</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-gray-200">
+                <tbody className="divide-y divide-slate-700">
                   {mismatches.map((result, idx) => {
                     const appNum = typeof result.appValue === 'string'
                       ? parseFloat(result.appValue.replace(/[£,]/g, ''))
@@ -237,13 +237,13 @@ export default async function ValidationPage() {
                     const diff = appNum - sheetNum;
 
                     return (
-                      <tr key={idx} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-900">{result.playerName}</td>
-                        <td className="px-4 py-3 text-sm text-gray-700">{result.field}</td>
+                      <tr key={idx} className="hover:bg-slate-700">
+                        <td className="px-4 py-3 text-sm text-gray-100">{result.playerName}</td>
+                        <td className="px-4 py-3 text-sm text-gray-300">{result.field}</td>
                         <td className="px-4 py-3 text-sm text-center font-semibold text-navy">
                           {result.appValue}
                         </td>
-                        <td className="px-4 py-3 text-sm text-center text-gray-700">
+                        <td className="px-4 py-3 text-sm text-center text-gray-300">
                           {result.spreadsheetValue}
                         </td>
                         <td className="px-4 py-3 text-sm text-center font-bold text-red-700">
@@ -260,19 +260,19 @@ export default async function ValidationPage() {
       )}
 
       {/* All Results (Collapsible) */}
-      <details className="bg-white border border-gray-200 rounded-lg p-4">
-        <summary className="cursor-pointer font-semibold text-gray-900 hover:text-navy">
+      <details className="bg-slate-800 border border-slate-700 rounded-lg p-4">
+        <summary className="cursor-pointer font-semibold text-gray-100 hover:text-navy">
           View All Validation Results ({totalChecks} checks)
         </summary>
         <div className="mt-4 overflow-x-auto">
-          <table className="min-w-full bg-white border border-gray-200 rounded-lg text-sm">
+          <table className="min-w-full bg-slate-800 border border-slate-700 rounded-lg text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-3 py-2 text-left font-semibold text-gray-700">Status</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-700">Player</th>
-                <th className="px-3 py-2 text-left font-semibold text-gray-700">Field</th>
-                <th className="px-3 py-2 text-center font-semibold text-gray-700">App</th>
-                <th className="px-3 py-2 text-center font-semibold text-gray-700">Spreadsheet</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-300">Status</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-300">Player</th>
+                <th className="px-3 py-2 text-left font-semibold text-gray-300">Field</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-300">App</th>
+                <th className="px-3 py-2 text-center font-semibold text-gray-300">Spreadsheet</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -281,10 +281,10 @@ export default async function ValidationPage() {
                   <td className="px-3 py-2 text-center">
                     {result.match ? '✅' : '❌'}
                   </td>
-                  <td className="px-3 py-2 text-gray-900">{result.playerName}</td>
-                  <td className="px-3 py-2 text-gray-700">{result.field}</td>
+                  <td className="px-3 py-2 text-gray-100">{result.playerName}</td>
+                  <td className="px-3 py-2 text-gray-300">{result.field}</td>
                   <td className="px-3 py-2 text-center font-medium text-navy">{result.appValue}</td>
-                  <td className="px-3 py-2 text-center text-gray-700">{result.spreadsheetValue}</td>
+                  <td className="px-3 py-2 text-center text-gray-300">{result.spreadsheetValue}</td>
                 </tr>
               ))}
             </tbody>

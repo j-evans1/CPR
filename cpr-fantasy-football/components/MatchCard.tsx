@@ -26,18 +26,18 @@ export default function MatchCard({ match }: MatchCardProps) {
   const sortedPlayers = [...match.players].sort((a, b) => b.points - a.points);
 
   return (
-    <div className="border rounded-lg overflow-hidden bg-white border-gray-200">
+    <div className="border rounded-lg overflow-hidden bg-slate-800 border-slate-700">
       {/* Match Header - Always Visible */}
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="w-full p-4 flex items-center justify-between hover:bg-gray-50 transition-colors touch-manipulation"
+        className="w-full p-4 flex items-center justify-between hover:bg-slate-700 transition-colors touch-manipulation"
       >
         <div className="flex items-center space-x-3 flex-1">
           <div className={`text-sm font-bold px-2 py-1 rounded ${result.color} min-w-[2rem] text-center`}>
             {result.text}
           </div>
           <div className="text-left flex-1">
-            <div className="font-semibold text-gray-900">
+            <div className="font-semibold text-gray-100">
               {match.team} {match.score} {match.opponent}
             </div>
             <div className="text-sm text-gray-500">
@@ -69,20 +69,20 @@ export default function MatchCard({ match }: MatchCardProps) {
 
       {/* Match Details - Expandable */}
       {isExpanded && (
-        <div className="border-t border-gray-200 bg-gray-50">
+        <div className="border-t border-slate-700 bg-slate-700">
           <div className="p-4">
-            <h4 className="font-semibold text-sm text-gray-700 mb-3 uppercase tracking-wide">
+            <h4 className="font-semibold text-sm text-gray-300 mb-3 uppercase tracking-wide">
               Player Performances
             </h4>
             <div className="space-y-1">
               {sortedPlayers.map((player, idx) => (
                 <div
                   key={idx}
-                  className="flex items-center justify-between p-2 bg-white rounded-lg shadow-sm"
+                  className="flex items-center justify-between p-2 bg-slate-600 rounded-lg shadow-sm"
                 >
                   <div className="flex-1 flex items-center gap-2">
-                    <div className="font-medium text-gray-900">{player.name}</div>
-                    <div className="text-xs text-gray-500 flex gap-2">
+                    <div className="font-medium text-gray-100">{player.name}</div>
+                    <div className="text-xs text-white flex gap-2">
                       {player.goals > 0 && <span>⚽ {player.goals}</span>}
                       {player.assists > 0 && <span>🅰️ {player.assists}</span>}
                       {player.cleanSheet > 0 && <span>🧤 CS</span>}
@@ -94,7 +94,7 @@ export default function MatchCard({ match }: MatchCardProps) {
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="font-semibold text-navy">{player.points}</div>
+                    <div className="font-semibold text-white tabular-nums">{player.points}</div>
                     <div className="text-xs text-gray-500">pts</div>
                   </div>
                 </div>
