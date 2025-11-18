@@ -55,26 +55,29 @@ export default async function Home() {
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-700">
-              {playerStats.map((player, index) => (
-                <tr
-                  key={player.name}
-                  className={`hover:bg-slate-700 transition-colors ${
-                    index < 3 ? 'bg-yellow-900/20' : ''
-                  }`}
-                >
-                  <td className={`px-6 py-4 text-lg font-bold text-gray-100 sticky left-0 z-10 ${
-                    index < 3 ? 'bg-yellow-900/20' : 'bg-slate-800'
-                  }`}>
-                    {index === 0 && '🥇'}
-                    {index === 1 && '🥈'}
-                    {index === 2 && '🥉'}
-                    {index > 2 && index + 1}
-                  </td>
-                  <td className={`px-6 py-4 text-base font-semibold text-gray-100 sticky left-[72px] z-10 tracking-wide ${
-                    index < 3 ? 'bg-yellow-900/20' : 'bg-slate-800'
-                  }`}>
-                    {player.name}
-                  </td>
+              {playerStats.map((player, index) => {
+                const getRowColors = () => {
+                  if (index === 0) return { bg: 'bg-yellow-900/40', sticky: 'bg-yellow-900' }; // Gold
+                  if (index === 1) return { bg: 'bg-gray-700/50', sticky: 'bg-gray-700' }; // Silver
+                  if (index === 2) return { bg: 'bg-amber-900/40', sticky: 'bg-amber-900' }; // Bronze
+                  return { bg: 'bg-slate-800', sticky: 'bg-slate-800' };
+                };
+                const colors = getRowColors();
+
+                return (
+                  <tr
+                    key={player.name}
+                    className={`hover:bg-slate-700 transition-colors ${colors.bg}`}
+                  >
+                    <td className={`px-6 py-4 text-lg font-bold text-gray-100 sticky left-0 z-10 ${colors.sticky}`}>
+                      {index === 0 && '🥇'}
+                      {index === 1 && '🥈'}
+                      {index === 2 && '🥉'}
+                      {index > 2 && index + 1}
+                    </td>
+                    <td className={`px-6 py-4 text-base font-semibold text-gray-100 sticky left-[72px] z-10 tracking-wide ${colors.sticky}`}>
+                      {player.name}
+                    </td>
                   <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
                     {player.appearances}
                   </td>
@@ -109,7 +112,8 @@ export default async function Home() {
                     {player.fantasyPoints}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>
