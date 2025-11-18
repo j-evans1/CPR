@@ -39,8 +39,8 @@ export default async function Home() {
           <table className="min-w-full bg-slate-800">
             <thead className="bg-navy text-white">
               <tr>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider sticky left-0 z-10 bg-navy">Rank</th>
-                <th className="px-6 py-4 text-left text-xs font-bold uppercase tracking-wider sticky left-[72px] z-10 bg-navy">Player</th>
+                <th className="px-3 md:px-6 py-4 text-left text-xs font-bold uppercase tracking-wider sticky left-0 z-10 bg-navy w-12 md:w-auto">Rank</th>
+                <th className="px-3 md:px-6 py-4 text-left text-xs font-bold uppercase tracking-wider sticky left-[48px] md:left-[72px] z-10 bg-navy">Player</th>
                 <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Apps</th>
                 <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Goals</th>
                 <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Assists</th>
@@ -69,13 +69,13 @@ export default async function Home() {
                     key={player.name}
                     className={`hover:bg-slate-700 transition-colors ${colors.bg}`}
                   >
-                    <td className={`px-6 py-4 text-lg font-bold text-gray-100 sticky left-0 z-10 ${colors.sticky}`}>
+                    <td className={`px-2 md:px-6 py-4 text-base md:text-lg font-bold text-gray-100 sticky left-0 z-10 ${colors.sticky} w-12 md:w-auto`}>
                       {index === 0 && '🥇'}
                       {index === 1 && '🥈'}
                       {index === 2 && '🥉'}
                       {index > 2 && index + 1}
                     </td>
-                    <td className={`px-6 py-4 text-base font-semibold text-gray-100 sticky left-[72px] z-10 tracking-wide ${colors.sticky}`}>
+                    <td className={`px-3 md:px-6 py-4 text-sm md:text-base font-semibold text-gray-100 sticky left-[48px] md:left-[72px] z-10 tracking-wide ${colors.sticky}`}>
                       {player.name}
                     </td>
                   <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
