@@ -62,13 +62,17 @@ export default async function Home() {
                     index < 3 ? 'bg-yellow-900/20' : ''
                   }`}
                 >
-                  <td className="px-6 py-4 text-lg font-bold text-gray-100 sticky left-0 z-10 bg-inherit">
+                  <td className={`px-6 py-4 text-lg font-bold text-gray-100 sticky left-0 z-10 ${
+                    index < 3 ? 'bg-yellow-900/20' : 'bg-slate-800'
+                  }`}>
                     {index === 0 && '🥇'}
                     {index === 1 && '🥈'}
                     {index === 2 && '🥉'}
                     {index > 2 && index + 1}
                   </td>
-                  <td className="px-6 py-4 text-base font-semibold text-gray-100 sticky left-[72px] z-10 bg-inherit tracking-wide">
+                  <td className={`px-6 py-4 text-base font-semibold text-gray-100 sticky left-[72px] z-10 tracking-wide ${
+                    index < 3 ? 'bg-yellow-900/20' : 'bg-slate-800'
+                  }`}>
                     {player.name}
                   </td>
                   <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">

@@ -76,6 +76,17 @@ export default function FinesPage() {
 
   const averageFine = totalCount > 0 ? totalFines / totalCount : 0;
 
+  // Sort players by filtered fines (≤ £5 only) for proper display order
+  const sortedPlayers = [...players].sort((a, b) => {
+    const aFiltered = a.fineDetails
+      .filter(fine => fine.amount <= 5)
+      .reduce((sum, fine) => sum + fine.amount, 0);
+    const bFiltered = b.fineDetails
+      .filter(fine => fine.amount <= 5)
+      .reduce((sum, fine) => sum + fine.amount, 0);
+    return bFiltered - aFiltered;
+  });
+
   return (
     <div>
       <div className="mb-8">
@@ -103,7 +114,7 @@ export default function FinesPage() {
 
       {/* Player Leaderboard */}
       <div className="space-y-2">
-        {players.map((player, index) => {
+        {sortedPlayers.map((player, index) => {
           // Calculate filtered totals for display (≤ £5 only)
           const filteredFines = player.fineDetails.filter(fine => fine.amount <= 5);
           const displayTotal = filteredFines.reduce((sum, fine) => sum + fine.amount, 0);
