@@ -1,7 +1,16 @@
 import Papa from 'papaparse';
 
+// Simple in-memory cache with expiration
+interface CacheEntry<T> {
+  data: T[];
+  timestamp: number;
+}
+
+const cache = new Map<string, CacheEntry<unknown>>();
+const CACHE_DURATION_MS = 60000; // 1 minute cache
+
 /**
- * Generic CSV fetcher using PapaParse
+ * Generic CSV fetcher using PapaParse with in-memory caching
  * @param url - The URL of the CSV file to fetch
  * @param useHeaders - Whether the CSV has headers (default: true). If false, columns are accessed by index
  * @returns Promise resolving to array of parsed CSV rows
@@ -9,8 +18,19 @@ import Papa from 'papaparse';
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchCSV<T = any>(url: string, useHeaders: boolean = true): Promise<T[]> {
   try {
+    // Check cache first
+    const cacheKey = `${url}-${useHeaders}`;
+    const cached = cache.get(cacheKey) as CacheEntry<T> | undefined;
+
+    if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MS) {
+      console.log(`Using cached data for ${url}`);
+      return cached.data;
+    }
+
+    // Fetch fresh data
+    console.log(`Fetching fresh data for ${url}`);
     const response = await fetch(url, {
-      cache: 'no-store', // Always fetch fresh data
+      cache: 'no-store',
     });
 
     if (!response.ok) {
@@ -19,7 +39,7 @@ export async function fetchCSV<T = any>(url: string, useHeaders: boolean = true)
 
     const csvText = await response.text();
 
-    return new Promise((resolve, reject) => {
+    const data = await new Promise<T[]>((resolve, reject) => {
       Papa.parse(csvText, {
         header: useHeaders,
         dynamicTyping: true,
@@ -32,6 +52,14 @@ export async function fetchCSV<T = any>(url: string, useHeaders: boolean = true)
         },
       });
     });
+
+    // Store in cache
+    cache.set(cacheKey, {
+      data,
+      timestamp: Date.now(),
+    });
+
+    return data;
   } catch (error) {
     console.error('Error fetching CSV:', error);
     throw error;

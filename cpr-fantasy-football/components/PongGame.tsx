@@ -1,222 +1,168 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 
 interface PongGameProps {
   onGameOver: () => void;
 }
 
+type GameState = 'start' | 'waiting' | 'ready' | 'playing' | 'victory' | 'defeat';
+
 export default function PongGame({ onGameOver }: PongGameProps) {
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [score, setScore] = useState(0);
-  const gameStateRef = useRef({
-    ball: { x: 400, y: 300, dx: 4, dy: 4, radius: 8 },
-    paddle: { x: 350, y: 550, width: 100, height: 12 },
-    bricks: [] as { x: number; y: number; width: number; height: number; visible: boolean }[],
-    animationId: 0,
-    keys: { left: false, right: false },
-    gameOver: false,
-  });
+  const [gameState, setGameState] = useState<GameState>('start');
+  const [round, setRound] = useState(1);
+  const [reactionTimes, setReactionTimes] = useState<number[]>([]);
+  const [currentStartTime, setCurrentStartTime] = useState<number>(0);
+  const [message, setMessage] = useState('');
+  const [waitTime, setWaitTime] = useState(2000);
 
-  const initBricks = useCallback(() => {
-    const bricks = [];
-    const rows = 5;
-    const cols = 8;
-    const brickWidth = 90;
-    const brickHeight = 20;
-    const padding = 10;
-    const offsetX = 30;
-    const offsetY = 50;
+  const startGame = useCallback(() => {
+    setGameState('waiting');
+    setRound(1);
+    setReactionTimes([]);
+    setMessage('Get Ready...');
 
-    for (let row = 0; row < rows; row++) {
-      for (let col = 0; col < cols; col++) {
-        bricks.push({
-          x: offsetX + col * (brickWidth + padding),
-          y: offsetY + row * (brickHeight + padding),
-          width: brickWidth,
-          height: brickHeight,
-          visible: true,
-        });
-      }
-    }
-    return bricks;
+    // Random wait time before showing green
+    const randomWait = Math.random() * 2000 + 1000; // 1-3 seconds
+    setWaitTime(randomWait);
+
+    setTimeout(() => {
+      setGameState('ready');
+      setMessage('CLICK NOW!');
+      setCurrentStartTime(Date.now());
+    }, randomWait);
   }, []);
 
-  const draw = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
+  const handleClick = useCallback(() => {
+    if (gameState === 'ready') {
+      const reactionTime = Date.now() - currentStartTime;
+      const newReactionTimes = [...reactionTimes, reactionTime];
+      setReactionTimes(newReactionTimes);
 
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
+      if (round >= 10) {
+        // Game over - calculate average
+        const average = newReactionTimes.reduce((a, b) => a + b, 0) / newReactionTimes.length;
 
-    const state = gameStateRef.current;
-
-    // Clear canvas
-    ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-    // Draw ball
-    ctx.beginPath();
-    ctx.arc(state.ball.x, state.ball.y, state.ball.radius, 0, Math.PI * 2);
-    ctx.fillStyle = '#fff';
-    ctx.fill();
-    ctx.closePath();
-
-    // Draw paddle
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(state.paddle.x, state.paddle.y, state.paddle.width, state.paddle.height);
-
-    // Draw bricks
-    state.bricks.forEach((brick) => {
-      if (brick.visible) {
-        ctx.fillStyle = '#ff6b6b';
-        ctx.fillRect(brick.x, brick.y, brick.width, brick.height);
-        ctx.strokeStyle = '#fff';
-        ctx.strokeRect(brick.x, brick.y, brick.width, brick.height);
-      }
-    });
-
-    // Draw score
-    ctx.fillStyle = '#fff';
-    ctx.font = '16px monospace';
-    ctx.fillText(`Score: ${score}`, 10, 25);
-  }, [score]);
-
-  const update = useCallback(() => {
-    const canvas = canvasRef.current;
-    if (!canvas) return;
-
-    const state = gameStateRef.current;
-
-    // Move paddle
-    if (state.keys.left && state.paddle.x > 0) {
-      state.paddle.x -= 7;
-    }
-    if (state.keys.right && state.paddle.x + state.paddle.width < canvas.width) {
-      state.paddle.x += 7;
-    }
-
-    // Move ball
-    state.ball.x += state.ball.dx;
-    state.ball.y += state.ball.dy;
-
-    // Ball collision with walls
-    if (state.ball.x + state.ball.radius > canvas.width || state.ball.x - state.ball.radius < 0) {
-      state.ball.dx = -state.ball.dx;
-    }
-    if (state.ball.y - state.ball.radius < 0) {
-      state.ball.dy = -state.ball.dy;
-    }
-
-    // Ball collision with paddle
-    if (
-      state.ball.y + state.ball.radius > state.paddle.y &&
-      state.ball.x > state.paddle.x &&
-      state.ball.x < state.paddle.x + state.paddle.width
-    ) {
-      state.ball.dy = -state.ball.dy;
-      // Add some angle based on where the ball hits the paddle
-      const hitPos = (state.ball.x - state.paddle.x) / state.paddle.width;
-      state.ball.dx = (hitPos - 0.5) * 8;
-    }
-
-    // Ball collision with bricks
-    state.bricks.forEach((brick) => {
-      if (brick.visible) {
-        if (
-          state.ball.x > brick.x &&
-          state.ball.x < brick.x + brick.width &&
-          state.ball.y > brick.y &&
-          state.ball.y < brick.y + brick.height
-        ) {
-          state.ball.dy = -state.ball.dy;
-          brick.visible = false;
-          setScore((prev) => prev + 10);
+        if (average < 300) {
+          setGameState('victory');
+          setMessage(`Amazing! Average: ${Math.round(average)}ms`);
+          setTimeout(() => onGameOver(), 2000);
+        } else {
+          setGameState('defeat');
+          setMessage(`Too slow! Average: ${Math.round(average)}ms`);
+          setTimeout(() => onGameOver(), 2000);
         }
-      }
-    });
-
-    // Game over if ball falls off bottom
-    if (state.ball.y + state.ball.radius > canvas.height) {
-      state.gameOver = true;
-      cancelAnimationFrame(state.animationId);
-      setTimeout(() => {
-        onGameOver();
-      }, 500);
-      return;
-    }
-  }, [onGameOver]);
-
-  const gameLoop = useCallback(() => {
-    const state = gameStateRef.current;
-    if (state.gameOver) return;
-
-    update();
-    draw();
-    state.animationId = requestAnimationFrame(gameLoop);
-  }, [update, draw]);
-
-  useEffect(() => {
-    const state = gameStateRef.current;
-    state.bricks = initBricks();
-    state.gameOver = false;
-    state.animationId = requestAnimationFrame(gameLoop);
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') state.keys.left = true;
-      if (e.key === 'ArrowRight') state.keys.right = true;
-    };
-
-    const handleKeyUp = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowLeft') state.keys.left = false;
-      if (e.key === 'ArrowRight') state.keys.right = false;
-    };
-
-    // Mouse/touch controls
-    const handleMouseMove = (e: MouseEvent | TouchEvent) => {
-      const canvas = canvasRef.current;
-      if (!canvas) return;
-
-      const rect = canvas.getBoundingClientRect();
-      let clientX: number;
-
-      if (e instanceof MouseEvent) {
-        clientX = e.clientX;
       } else {
-        clientX = e.touches[0].clientX;
+        // Next round
+        setRound(round + 1);
+        setGameState('waiting');
+        setMessage(`Round ${round + 1} - Get Ready...`);
+
+        // Each round gets slightly faster
+        const randomWait = Math.random() * 1500 + 500 + (1000 - round * 50);
+        setWaitTime(randomWait);
+
+        setTimeout(() => {
+          setGameState('ready');
+          setMessage('CLICK NOW!');
+          setCurrentStartTime(Date.now());
+        }, randomWait);
       }
+    } else if (gameState === 'waiting') {
+      // Clicked too early
+      setGameState('defeat');
+      setMessage('Too early! You lose!');
+      setTimeout(() => onGameOver(), 2000);
+    }
+  }, [gameState, currentStartTime, reactionTimes, round, onGameOver]);
 
-      const x = clientX - rect.left;
-      state.paddle.x = Math.max(0, Math.min(x - state.paddle.width / 2, canvas.width - state.paddle.width));
-    };
+  const getCircleColor = () => {
+    if (gameState === 'start') return 'bg-gray-400';
+    if (gameState === 'waiting') return 'bg-red-500';
+    if (gameState === 'ready') return 'bg-green-500';
+    if (gameState === 'victory') return 'bg-yellow-400';
+    if (gameState === 'defeat') return 'bg-red-600';
+    return 'bg-gray-400';
+  };
 
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('touchmove', handleMouseMove);
-
-    return () => {
-      cancelAnimationFrame(state.animationId);
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('touchmove', handleMouseMove);
-    };
-  }, [gameLoop, initBricks]);
+  const getLastReactionTime = () => {
+    if (reactionTimes.length === 0) return null;
+    return reactionTimes[reactionTimes.length - 1];
+  };
 
   return (
-    <div className="flex flex-col items-center justify-center">
-      <canvas
-        ref={canvasRef}
-        width={800}
-        height={600}
-        className="border-4 border-white rounded-lg"
-        style={{ maxWidth: '100%', height: 'auto' }}
-      />
-      <div className="mt-4 text-white text-center">
-        <p className="text-sm">Use arrow keys or mouse/touch to move the paddle</p>
-        <p className="text-xs opacity-75 mt-1">Don&apos;t let the ball fall!</p>
-      </div>
+    <div className="flex flex-col items-center justify-center relative bg-black p-8 rounded-lg min-h-[600px]">
+      {/* Start Screen */}
+      {gameState === 'start' && (
+        <div className="text-center">
+          <h2 className="text-4xl font-bold text-white mb-4">Reaction Time Challenge</h2>
+          <p className="text-white mb-6">Click the circle as fast as you can when it turns GREEN</p>
+          <p className="text-yellow-400 mb-6 text-lg">⚠️ Don&apos;t click when it&apos;s RED or you lose!</p>
+          <p className="text-white mb-6">Complete 10 rounds with average under 300ms to win</p>
+          <button
+            onClick={startGame}
+            className="px-8 py-4 bg-green-600 hover:bg-green-700 text-white font-bold text-2xl rounded-lg transition-colors"
+          >
+            Start
+          </button>
+        </div>
+      )}
+
+      {/* Playing */}
+      {(gameState === 'waiting' || gameState === 'ready') && (
+        <div className="text-center">
+          <div className="mb-6">
+            <p className="text-white text-xl mb-2">Round {round}/10</p>
+            <p className="text-white text-lg">{message}</p>
+            {getLastReactionTime() && (
+              <p className="text-gray-400 text-sm mt-2">
+                Last: {getLastReactionTime()}ms
+              </p>
+            )}
+          </div>
+
+          <button
+            onClick={handleClick}
+            className={`${getCircleColor()} w-64 h-64 rounded-full transition-all duration-200 hover:scale-105 cursor-pointer border-4 border-white flex items-center justify-center`}
+          >
+            <span className="text-white text-2xl font-bold">
+              {gameState === 'ready' ? 'CLICK!' : 'WAIT...'}
+            </span>
+          </button>
+
+          {reactionTimes.length > 0 && (
+            <div className="mt-6">
+              <p className="text-gray-400 text-sm">
+                Average: {Math.round(reactionTimes.reduce((a, b) => a + b, 0) / reactionTimes.length)}ms
+              </p>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Victory */}
+      {gameState === 'victory' && (
+        <div className="text-center">
+          <div className={`${getCircleColor()} w-64 h-64 rounded-full mx-auto mb-6 flex items-center justify-center`}>
+            <span className="text-6xl">🎉</span>
+          </div>
+          <h2 className="text-5xl font-bold text-yellow-400 mb-4">You Win!</h2>
+          <p className="text-white text-2xl mb-2">{message}</p>
+          <p className="text-gray-400 text-sm mt-4">Revealing fines...</p>
+        </div>
+      )}
+
+      {/* Defeat */}
+      {gameState === 'defeat' && (
+        <div className="text-center">
+          <div className={`${getCircleColor()} w-64 h-64 rounded-full mx-auto mb-6 flex items-center justify-center`}>
+            <span className="text-6xl">😢</span>
+          </div>
+          <h2 className="text-5xl font-bold text-red-400 mb-4">Game Over</h2>
+          <p className="text-white text-2xl mb-2">{message}</p>
+          <p className="text-gray-400 text-sm mt-4">Revealing fines...</p>
+        </div>
+      )}
     </div>
   );
 }
