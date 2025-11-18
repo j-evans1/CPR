@@ -2,12 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { getPlayerFines, PlayerFineDetail } from '@/lib/fines-processor';
+import PongGame from '@/components/PongGame';
 
 export default function FinesPage() {
   const [players, setPlayers] = useState<PlayerFineDetail[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerFineDetail | null>(null);
+  const [showPongGame, setShowPongGame] = useState(false);
+  const [pongPlayer, setPongPlayer] = useState<PlayerFineDetail | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -93,7 +96,14 @@ export default function FinesPage() {
         {players.map((player, index) => (
           <button
             key={player.name}
-            onClick={() => setSelectedPlayer(player)}
+            onClick={() => {
+              if (player.name === 'J. Heatley') {
+                setPongPlayer(player);
+                setShowPongGame(true);
+              } else {
+                setSelectedPlayer(player);
+              }
+            }}
             className="w-full p-3 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors touch-manipulation text-left"
           >
             <div className="flex items-center justify-between gap-2">
@@ -138,6 +148,37 @@ export default function FinesPage() {
       <div className="mt-6 text-sm text-gray-500 text-center">
         <p>Tap any player to view detailed fine history</p>
       </div>
+
+      {/* Pong Game Modal */}
+      {showPongGame && pongPlayer && (
+        <div className="fixed inset-0 bg-black flex items-center justify-center p-4 z-50">
+          <div className="relative">
+            <button
+              onClick={() => {
+                setShowPongGame(false);
+                setPongPlayer(null);
+              }}
+              className="absolute -top-2 -right-2 z-10 bg-white text-black hover:bg-gray-200 rounded-full p-2 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
+              </svg>
+            </button>
+            <PongGame
+              onGameOver={() => {
+                setShowPongGame(false);
+                setSelectedPlayer(pongPlayer);
+                setPongPlayer(null);
+              }}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Player Detail Modal */}
       {selectedPlayer && (
