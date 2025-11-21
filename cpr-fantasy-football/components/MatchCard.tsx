@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Match } from '@/lib/match-processor';
+import SubmitMatchDataModal from './SubmitMatchDataModal';
 
 interface MatchCardProps {
   match: Match;
@@ -9,6 +10,11 @@ interface MatchCardProps {
 
 export default function MatchCard({ match }: MatchCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showClearModal, setShowClearModal] = useState(false);
+  const [clearPassword, setClearPassword] = useState('');
+  const [clearError, setClearError] = useState<string | null>(null);
+  const [isClearing, setIsClearing] = useState(false);
 
   const getResultBadge = () => {
     if (match.cprScore > match.opponentScore) {
@@ -25,6 +31,43 @@ export default function MatchCard({ match }: MatchCardProps) {
   // Sort players by points (highest first)
   const sortedPlayers = [...match.players].sort((a, b) => b.points - a.points);
 
+  const handleSubmitSuccess = () => {
+    setShowSubmitModal(false);
+    // Reload the page to show updated data
+    window.location.reload();
+  };
+
+  const handleClearSubmission = async () => {
+    setIsClearing(true);
+    setClearError(null);
+
+    try {
+      const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
+      const matchKey = `${match.date}-${matchDescription}`;
+
+      const response = await fetch(`/api/match-submission?password=${encodeURIComponent(clearPassword)}&matchKey=${encodeURIComponent(matchKey)}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        if (response.status === 401) {
+          setClearError('Incorrect password');
+        } else {
+          throw new Error(data.error || 'Failed to clear submission');
+        }
+        setIsClearing(false);
+        return;
+      }
+
+      // Success - reload page
+      window.location.reload();
+    } catch (err) {
+      setClearError(err instanceof Error ? err.message : 'Failed to clear submission');
+      setIsClearing(false);
+    }
+  };
+
   return (
     <div className="border rounded-lg overflow-hidden bg-slate-800 border-slate-700">
       {/* Match Header - Always Visible */}
@@ -37,8 +80,13 @@ export default function MatchCard({ match }: MatchCardProps) {
             {result.text}
           </div>
           <div className="text-left flex-1">
-            <div className="font-semibold text-gray-100">
+            <div className="font-semibold text-gray-100 flex items-center gap-2">
               {match.team} {match.score} {match.opponent}
+              {match.isSubmitted && (
+                <span className="text-xs bg-blue-600 text-white px-2 py-0.5 rounded font-medium">
+                  SUBMITTED
+                </span>
+              )}
             </div>
             <div className="text-sm text-gray-500">
               {match.date}
@@ -71,37 +119,158 @@ export default function MatchCard({ match }: MatchCardProps) {
       {isExpanded && (
         <div className="border-t border-slate-700 bg-slate-700">
           <div className="p-4">
-            <h4 className="font-semibold text-sm text-gray-300 mb-3 uppercase tracking-wide">
-              Player Performances
-            </h4>
-            <div className="space-y-1">
-              {sortedPlayers.map((player, idx) => (
-                <div
-                  key={idx}
-                  className="flex items-center justify-between p-2 bg-slate-600 rounded-lg shadow-sm"
+            {/* Action Buttons */}
+            <div className="mb-4 flex gap-3">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowSubmitModal(true);
+                }}
+                className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors touch-manipulation"
+              >
+                {match.isSubmitted ? 'Update Match Data' : 'Submit Match Data'}
+              </button>
+              {match.isSubmitted && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setShowClearModal(true);
+                    setClearPassword('');
+                    setClearError(null);
+                  }}
+                  className="flex-1 py-3 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg transition-colors touch-manipulation"
                 >
-                  <div className="flex-1 flex items-center gap-2">
-                    <div className="font-medium text-gray-100">{player.name}</div>
-                    <div className="text-xs text-white flex gap-2">
-                      {player.goals > 0 && <span>⚽ {player.goals}</span>}
-                      {player.assists > 0 && <span>🅰️ {player.assists}</span>}
-                      {player.cleanSheet > 0 && <span>🧤 CS</span>}
-                      {player.yellowCard > 0 && <span>🟨 {player.yellowCard}</span>}
-                      {player.redCard > 0 && <span>🟥 {player.redCard}</span>}
-                      {player.goals === 0 && player.assists === 0 && player.cleanSheet === 0 && (
-                        <span className="text-gray-400">-</span>
-                      )}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-semibold text-white tabular-nums">{player.points}</div>
-                    <div className="text-xs text-gray-500">pts</div>
-                  </div>
+                  Clear Submission
+                </button>
+              )}
+            </div>
+
+            {match.isSubmitted ? (
+              <>
+                {/* Submitted Data Table */}
+                <div className="bg-slate-600 rounded-lg p-3 mb-3">
+                  <p className="text-xs text-yellow-400 text-center">
+                    ⚠️ Submitted data shown below. Fantasy points will update after data is added to Google Sheets.
+                  </p>
                 </div>
-              ))}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs">
+                    <thead>
+                      <tr className="text-gray-400 border-b border-slate-600">
+                        <th className="text-left py-2 px-2">Player</th>
+                        <th className="text-center py-2 px-1">App</th>
+                        <th className="text-center py-2 px-1">Goals</th>
+                        <th className="text-center py-2 px-1">Assists</th>
+                        <th className="text-center py-2 px-1">MoM</th>
+                        <th className="text-center py-2 px-1">MoM2</th>
+                        <th className="text-center py-2 px-1">MoM3</th>
+                        <th className="text-center py-2 px-1">DoD</th>
+                        <th className="text-center py-2 px-1">Yellow</th>
+                        <th className="text-center py-2 px-1">Red</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {[...match.players].sort((a, b) => a.name.localeCompare(b.name)).map((player, idx) => (
+                        <tr key={idx} className="border-b border-slate-600 hover:bg-slate-600/50">
+                          <td className="py-2 px-2 text-gray-100 font-medium">{player.name}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.appearance || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.goals || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.assists || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.mom1 || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.mom2 || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.mom3 || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.dod || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.yellowCard || 0}</td>
+                          <td className="text-center py-2 px-1 text-gray-300">{player.redCard || 0}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </>
+            ) : (
+              <>
+                {/* Regular Player Performances */}
+                <h4 className="font-semibold text-sm text-gray-300 mb-3 uppercase tracking-wide">
+                  Player Performances
+                </h4>
+                <div className="space-y-1">
+                  {sortedPlayers.map((player, idx) => (
+                    <div
+                      key={idx}
+                      className="flex items-center justify-between p-2 bg-slate-600 rounded-lg shadow-sm"
+                    >
+                      <div className="flex-1 flex items-center gap-2">
+                        <div className="font-medium text-gray-100">{player.name}</div>
+                        <div className="text-xs text-white flex gap-2">
+                          {player.goals > 0 && <span>⚽ {player.goals}</span>}
+                          {player.assists > 0 && <span>🅰️ {player.assists}</span>}
+                          {player.cleanSheet > 0 && <span>🧤 CS</span>}
+                          {player.yellowCard > 0 && <span>🟨 {player.yellowCard}</span>}
+                          {player.redCard > 0 && <span>🟥 {player.redCard}</span>}
+                          {player.goals === 0 && player.assists === 0 && player.cleanSheet === 0 && (
+                            <span className="text-gray-400">-</span>
+                          )}
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold text-white tabular-nums">{player.points}</div>
+                        <div className="text-xs text-gray-500">pts</div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Clear Submission Password Modal */}
+      {showClearModal && (
+        <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowClearModal(false)}>
+          <div className="bg-slate-800 border border-slate-700 rounded-lg p-6 max-w-md w-full" onClick={(e) => e.stopPropagation()}>
+            <h3 className="text-xl font-bold text-gray-100 mb-4">Enter Password to Clear</h3>
+            {clearError && (
+              <div className="bg-red-900/30 border border-red-600 rounded-lg p-3 mb-4">
+                <p className="text-red-200 text-sm">{clearError}</p>
+              </div>
+            )}
+            <input
+              type="password"
+              value={clearPassword}
+              onChange={(e) => setClearPassword(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleClearSubmission()}
+              placeholder="Enter password"
+              className="w-full px-4 py-3 bg-slate-700 text-gray-100 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none mb-4"
+              autoFocus
+            />
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowClearModal(false)}
+                className="flex-1 py-3 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleClearSubmission}
+                disabled={isClearing}
+                className="flex-1 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors font-semibold disabled:opacity-50"
+              >
+                {isClearing ? 'Clearing...' : 'Clear Submission'}
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Submit Modal */}
+      {showSubmitModal && (
+        <SubmitMatchDataModal
+          match={match}
+          onClose={() => setShowSubmitModal(false)}
+          onSuccess={handleSubmitSuccess}
+        />
       )}
     </div>
   );

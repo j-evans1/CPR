@@ -10,6 +10,10 @@ export interface MatchPlayerPerformance {
   yellowCard: number;
   redCard: number;
   points: number;
+  mom1?: number;
+  mom2?: number;
+  mom3?: number;
+  dod?: number;
 }
 
 export interface Match {
@@ -21,6 +25,7 @@ export interface Match {
   opponentScore: number;
   gameweek: string;
   players: MatchPlayerPerformance[];
+  isSubmitted?: boolean; // Flag to indicate if this match data comes from captain submission
 }
 
 /**

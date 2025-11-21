@@ -1,4 +1,5 @@
 import { getMatches, Match } from '@/lib/match-processor';
+import { mergeMatchesWithSubmissions } from '@/lib/submission-merger';
 import MatchesView from '@/components/MatchesView';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +9,8 @@ export default async function MatchesPage() {
   let error: string | null = null;
 
   try {
-    matches = await getMatches();
+    const sheetMatches = await getMatches();
+    matches = await mergeMatchesWithSubmissions(sheetMatches);
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load matches';
     console.error('Error loading matches:', e);

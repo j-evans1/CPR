@@ -1,0 +1,217 @@
+import { sql } from '@vercel/postgres';
+
+export interface MatchSubmission {
+  id: number;
+  match_key: string;
+  date: string;
+  team: 'CPR' | 'CPRA';
+  opponent: string;
+  cpr_score: number;
+  opponent_score: number;
+  gameweek: string;
+  submitted_at: Date;
+  submitted_by?: string;
+}
+
+export interface PlayerSubmission {
+  id: number;
+  submission_id: number;
+  player_name: string;
+  appearance: number;
+  goals: number;
+  assists: number;
+  clean_sheet: number;
+  yellow_card: number;
+  red_card: number;
+  mom_1: number;
+  mom_2: number;
+  mom_3: number;
+  dod: number;
+}
+
+/**
+ * Initialize database tables
+ */
+export async function initDb() {
+  // Create match_submissions table
+  await sql`
+    CREATE TABLE IF NOT EXISTS match_submissions (
+      id SERIAL PRIMARY KEY,
+      match_key VARCHAR(255) UNIQUE NOT NULL,
+      date VARCHAR(20) NOT NULL,
+      team VARCHAR(10) NOT NULL,
+      opponent VARCHAR(100) NOT NULL,
+      cpr_score INTEGER NOT NULL,
+      opponent_score INTEGER NOT NULL,
+      gameweek VARCHAR(20) NOT NULL,
+      submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      submitted_by VARCHAR(100)
+    )
+  `;
+
+  // Create player_submissions table
+  await sql`
+    CREATE TABLE IF NOT EXISTS player_submissions (
+      id SERIAL PRIMARY KEY,
+      submission_id INTEGER NOT NULL REFERENCES match_submissions(id) ON DELETE CASCADE,
+      player_name VARCHAR(100) NOT NULL,
+      appearance INTEGER DEFAULT 0,
+      goals INTEGER DEFAULT 0,
+      assists INTEGER DEFAULT 0,
+      clean_sheet INTEGER DEFAULT 0,
+      yellow_card INTEGER DEFAULT 0,
+      red_card INTEGER DEFAULT 0,
+      mom_1 INTEGER DEFAULT 0,
+      mom_2 INTEGER DEFAULT 0,
+      mom_3 INTEGER DEFAULT 0,
+      dod INTEGER DEFAULT 0
+    )
+  `;
+}
+
+/**
+ * Get all match submissions with their player data
+ */
+export async function getMatchSubmissions() {
+  const matchesResult = await sql<MatchSubmission>`
+    SELECT * FROM match_submissions ORDER BY date DESC
+  `;
+
+  const submissions = await Promise.all(
+    matchesResult.rows.map(async (match) => {
+      const playersResult = await sql<PlayerSubmission>`
+        SELECT * FROM player_submissions WHERE submission_id = ${match.id}
+      `;
+      return {
+        match,
+        players: playersResult.rows,
+      };
+    })
+  );
+
+  return submissions;
+}
+
+/**
+ * Get submission for a specific match
+ */
+export async function getMatchSubmission(matchKey: string) {
+  const matchResult = await sql<MatchSubmission>`
+    SELECT * FROM match_submissions WHERE match_key = ${matchKey}
+  `;
+
+  if (matchResult.rows.length === 0) {
+    return null;
+  }
+
+  const match = matchResult.rows[0];
+  const playersResult = await sql<PlayerSubmission>`
+    SELECT * FROM player_submissions WHERE submission_id = ${match.id}
+  `;
+
+  return {
+    match,
+    players: playersResult.rows,
+  };
+}
+
+/**
+ * Create or update a match submission
+ */
+export async function upsertMatchSubmission(
+  matchKey: string,
+  matchData: {
+    date: string;
+    team: 'CPR' | 'CPRA';
+    opponent: string;
+    cprScore: number;
+    opponentScore: number;
+    gameweek: string;
+    submittedBy?: string;
+  },
+  players: Array<{
+    name: string;
+    appearance: number;
+    goals: number;
+    assists: number;
+    cleanSheet: number;
+    yellowCard: number;
+    redCard: number;
+    mom1: number;
+    mom2: number;
+    mom3: number;
+    dod: number;
+  }>
+) {
+  // Check if submission already exists
+  const existing = await sql<MatchSubmission>`
+    SELECT id FROM match_submissions WHERE match_key = ${matchKey}
+  `;
+
+  let submissionId: number;
+
+  if (existing.rows.length > 0) {
+    // Update existing submission
+    submissionId = existing.rows[0].id;
+    await sql`
+      UPDATE match_submissions
+      SET date = ${matchData.date},
+          team = ${matchData.team},
+          opponent = ${matchData.opponent},
+          cpr_score = ${matchData.cprScore},
+          opponent_score = ${matchData.opponentScore},
+          gameweek = ${matchData.gameweek},
+          submitted_at = CURRENT_TIMESTAMP,
+          submitted_by = ${matchData.submittedBy || null}
+      WHERE id = ${submissionId}
+    `;
+
+    // Delete old player data
+    await sql`
+      DELETE FROM player_submissions WHERE submission_id = ${submissionId}
+    `;
+  } else {
+    // Insert new submission
+    const result = await sql<{ id: number }>`
+      INSERT INTO match_submissions (match_key, date, team, opponent, cpr_score, opponent_score, gameweek, submitted_by)
+      VALUES (${matchKey}, ${matchData.date}, ${matchData.team}, ${matchData.opponent}, ${matchData.cprScore}, ${matchData.opponentScore}, ${matchData.gameweek}, ${matchData.submittedBy || null})
+      RETURNING id
+    `;
+    submissionId = result.rows[0].id;
+  }
+
+  // Insert player data
+  for (const player of players) {
+    await sql`
+      INSERT INTO player_submissions (
+        submission_id, player_name, appearance, goals, assists, clean_sheet,
+        yellow_card, red_card, mom_1, mom_2, mom_3, dod
+      )
+      VALUES (
+        ${submissionId}, ${player.name}, ${player.appearance}, ${player.goals}, ${player.assists}, ${player.cleanSheet},
+        ${player.yellowCard}, ${player.redCard}, ${player.mom1}, ${player.mom2}, ${player.mom3}, ${player.dod}
+      )
+    `;
+  }
+
+  return submissionId;
+}
+
+/**
+ * Delete a match submission and its player data
+ */
+export async function deleteMatchSubmission(matchKey: string) {
+  await sql`
+    DELETE FROM match_submissions WHERE match_key = ${matchKey}
+  `;
+}
+
+/**
+ * Check if a submission exists for a match
+ */
+export async function submissionExists(matchKey: string): Promise<boolean> {
+  const result = await sql<{ count: number }>`
+    SELECT COUNT(*) as count FROM match_submissions WHERE match_key = ${matchKey}
+  `;
+  return result.rows[0].count > 0;
+}
