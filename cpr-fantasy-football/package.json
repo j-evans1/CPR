@@ -9,8 +9,10 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^2.0.71",
     "@vercel/analytics": "^1.5.0",
     "@vercel/postgres": "^0.10.0",
+    "ai": "^5.0.98",
     "next": "16.0.3",
     "papaparse": "^5.5.3",
     "react": "19.2.0",

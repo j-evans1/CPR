@@ -26,6 +26,8 @@ export interface Match {
   gameweek: string;
   players: MatchPlayerPerformance[];
   isSubmitted?: boolean; // Flag to indicate if this match data comes from captain submission
+  matchSummary?: string;
+  matchReport?: string;
 }
 
 /**

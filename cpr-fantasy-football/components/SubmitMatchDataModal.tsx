@@ -27,6 +27,9 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
   const [cprScore, setCprScore] = useState<number>(match.cprScore);
   const [opponentScore, setOpponentScore] = useState<number>(match.opponentScore);
 
+  // Match summary for AI report generation
+  const [matchSummary, setMatchSummary] = useState<string>('');
+
   // Stat entries
   const [goals, setGoals] = useState<StatEntry[]>([]);
   const [assists, setAssists] = useState<StatEntry[]>([]);
@@ -222,6 +225,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
             cprScore: cprScore,
             opponentScore: opponentScore,
             gameweek: match.gameweek,
+            matchSummary: matchSummary || undefined,
           },
           players: playersArray,
         }),
@@ -403,6 +407,23 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                   />
                 </div>
               </div>
+            </div>
+
+            {/* Match Summary */}
+            <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
+              <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">
+                Match Summary (Optional)
+              </h4>
+              <p className="text-xs text-gray-400 mb-2">
+                Write a brief summary of the match to generate an AI match report for Instagram
+              </p>
+              <textarea
+                value={matchSummary}
+                onChange={(e) => setMatchSummary(e.target.value)}
+                placeholder="e.g., Hard-fought game with a dramatic finish. Smith scored a worldie in the 89th minute..."
+                rows={4}
+                className="w-full px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none resize-none"
+              />
             </div>
 
             {/* Goals */}

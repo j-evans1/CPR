@@ -9,6 +9,8 @@ export interface MatchSubmission {
   cpr_score: number;
   opponent_score: number;
   gameweek: string;
+  match_summary?: string;
+  match_report?: string;
   submitted_at: Date;
   submitted_by?: string;
 }
@@ -44,10 +46,21 @@ export async function initDb() {
       cpr_score INTEGER NOT NULL,
       opponent_score INTEGER NOT NULL,
       gameweek VARCHAR(20) NOT NULL,
+      match_summary TEXT,
+      match_report TEXT,
       submitted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
       submitted_by VARCHAR(100)
     )
   `;
+
+  // Add columns to existing table if they don't exist
+  try {
+    await sql`ALTER TABLE match_submissions ADD COLUMN IF NOT EXISTS match_summary TEXT`;
+    await sql`ALTER TABLE match_submissions ADD COLUMN IF NOT EXISTS match_report TEXT`;
+  } catch (e) {
+    // Columns might already exist, continue
+    console.log('Columns already exist or error adding columns:', e);
+  }
 
   // Create player_submissions table
   await sql`
@@ -127,6 +140,7 @@ export async function upsertMatchSubmission(
     cprScore: number;
     opponentScore: number;
     gameweek: string;
+    matchSummary?: string;
     submittedBy?: string;
   },
   players: Array<{
@@ -161,6 +175,7 @@ export async function upsertMatchSubmission(
           cpr_score = ${matchData.cprScore},
           opponent_score = ${matchData.opponentScore},
           gameweek = ${matchData.gameweek},
+          match_summary = ${matchData.matchSummary || null},
           submitted_at = CURRENT_TIMESTAMP,
           submitted_by = ${matchData.submittedBy || null}
       WHERE id = ${submissionId}
@@ -173,8 +188,8 @@ export async function upsertMatchSubmission(
   } else {
     // Insert new submission
     const result = await sql<{ id: number }>`
-      INSERT INTO match_submissions (match_key, date, team, opponent, cpr_score, opponent_score, gameweek, submitted_by)
-      VALUES (${matchKey}, ${matchData.date}, ${matchData.team}, ${matchData.opponent}, ${matchData.cprScore}, ${matchData.opponentScore}, ${matchData.gameweek}, ${matchData.submittedBy || null})
+      INSERT INTO match_submissions (match_key, date, team, opponent, cpr_score, opponent_score, gameweek, match_summary, submitted_by)
+      VALUES (${matchKey}, ${matchData.date}, ${matchData.team}, ${matchData.opponent}, ${matchData.cprScore}, ${matchData.opponentScore}, ${matchData.gameweek}, ${matchData.matchSummary || null}, ${matchData.submittedBy || null})
       RETURNING id
     `;
     submissionId = result.rows[0].id;
@@ -214,4 +229,15 @@ export async function submissionExists(matchKey: string): Promise<boolean> {
     SELECT COUNT(*) as count FROM match_submissions WHERE match_key = ${matchKey}
   `;
   return result.rows[0].count > 0;
+}
+
+/**
+ * Update match report for a submission
+ */
+export async function updateMatchReport(matchKey: string, matchReport: string) {
+  await sql`
+    UPDATE match_submissions
+    SET match_report = ${matchReport}
+    WHERE match_key = ${matchKey}
+  `;
 }

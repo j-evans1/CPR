@@ -15,6 +15,9 @@ export default function MatchCard({ match }: MatchCardProps) {
   const [clearPassword, setClearPassword] = useState('');
   const [clearError, setClearError] = useState<string | null>(null);
   const [isClearing, setIsClearing] = useState(false);
+  const [isGeneratingReport, setIsGeneratingReport] = useState(false);
+  const [matchReport, setMatchReport] = useState<string | null>(match.matchReport || null);
+  const [reportError, setReportError] = useState<string | null>(null);
 
   const getResultBadge = () => {
     if (match.cprScore > match.opponentScore) {
@@ -65,6 +68,56 @@ export default function MatchCard({ match }: MatchCardProps) {
     } catch (err) {
       setClearError(err instanceof Error ? err.message : 'Failed to clear submission');
       setIsClearing(false);
+    }
+  };
+
+  const handleGenerateReport = async () => {
+    setIsGeneratingReport(true);
+    setReportError(null);
+
+    try {
+      const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
+      const matchKey = `${match.date}-${matchDescription}`;
+
+      const response = await fetch('/api/generate-match-report', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          matchKey,
+          matchData: {
+            date: match.date,
+            team: match.team,
+            opponent: match.opponent,
+            cprScore: match.cprScore,
+            opponentScore: match.opponentScore,
+          },
+          playerStats: match.players,
+          matchSummary: match.matchSummary,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to generate match report');
+      }
+
+      const data = await response.json();
+      setMatchReport(data.report);
+    } catch (err) {
+      setReportError(err instanceof Error ? err.message : 'Failed to generate match report');
+    } finally {
+      setIsGeneratingReport(false);
+    }
+  };
+
+  const copyReportToClipboard = async () => {
+    if (matchReport) {
+      try {
+        await navigator.clipboard.writeText(matchReport);
+        alert('Match report copied to clipboard!');
+      } catch (err) {
+        console.error('Failed to copy to clipboard:', err);
+        alert('Failed to copy to clipboard');
+      }
     }
   };
 
@@ -221,6 +274,58 @@ export default function MatchCard({ match }: MatchCardProps) {
                   ))}
                 </div>
               </>
+            )}
+
+            {/* Match Report Section - Only show if match is submitted and has summary */}
+            {match.isSubmitted && match.matchSummary && (
+              <div className="mt-4 pt-4 border-t border-slate-600">
+                <h4 className="font-semibold text-sm text-gray-300 mb-3 uppercase tracking-wide">
+                  Match Report
+                </h4>
+
+                {reportError && (
+                  <div className="bg-red-900/30 border border-red-600 rounded-lg p-3 mb-3">
+                    <p className="text-red-200 text-sm">{reportError}</p>
+                  </div>
+                )}
+
+                {matchReport ? (
+                  <div className="space-y-3">
+                    <div className="bg-slate-600 rounded-lg p-4 border border-slate-500">
+                      <p className="text-gray-100 text-sm whitespace-pre-wrap leading-relaxed">{matchReport}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        onClick={copyReportToClipboard}
+                        className="flex-1 py-2 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors text-sm"
+                      >
+                        📋 Copy to Clipboard
+                      </button>
+                      <button
+                        onClick={handleGenerateReport}
+                        disabled={isGeneratingReport}
+                        className="flex-1 py-2 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50 text-sm"
+                      >
+                        {isGeneratingReport ? '⏳ Regenerating...' : '🔄 Regenerate'}
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <button
+                    onClick={handleGenerateReport}
+                    disabled={isGeneratingReport}
+                    className="w-full py-3 bg-purple-600 hover:bg-purple-700 text-white font-semibold rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isGeneratingReport ? '⏳ Generating Match Report...' : '✨ Generate AI Match Report'}
+                  </button>
+                )}
+
+                {match.matchSummary && (
+                  <div className="mt-3 text-xs text-gray-400">
+                    <strong>Summary:</strong> {match.matchSummary}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         </div>

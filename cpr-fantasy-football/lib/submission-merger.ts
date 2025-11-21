@@ -55,7 +55,9 @@ export async function mergeMatchesWithSubmissions(matches: Match[]): Promise<Mat
         gameweek: submission.match.gameweek,
         players: submittedPlayers,
         isSubmitted: true, // Flag to indicate this is submitted data
-      } as Match & { isSubmitted: boolean };
+        matchSummary: submission.match.match_summary,
+        matchReport: submission.match.match_report,
+      } as Match & { isSubmitted: boolean; matchSummary?: string; matchReport?: string };
     })
   );
 
