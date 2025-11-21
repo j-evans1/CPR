@@ -1,14 +1,20 @@
 import { getPlayerStats } from '@/lib/data-processor';
+import { getMatches, Match } from '@/lib/match-processor';
+import { mergeMatchesWithSubmissions } from '@/lib/submission-merger';
 import { PlayerStat } from '@/lib/types';
+import PlayerStatsTable from '@/components/PlayerStatsTable';
 
 export const dynamic = 'force-dynamic'; // Always fetch fresh data
 
 export default async function Home() {
   let playerStats: PlayerStat[] = [];
+  let matches: Match[] = [];
   let error: string | null = null;
 
   try {
     playerStats = await getPlayerStats();
+    const sheetMatches = await getMatches();
+    matches = await mergeMatchesWithSubmissions(sheetMatches);
   } catch (e) {
     error = e instanceof Error ? e.message : 'Failed to load player stats';
     console.error('Error loading player stats:', e);
@@ -35,88 +41,7 @@ export default async function Home() {
           <p className="text-gray-400">No player stats available yet.</p>
         </div>
       ) : (
-        <div className="overflow-x-auto shadow-lg rounded-lg border border-slate-700">
-          <table className="min-w-full bg-slate-800">
-            <thead className="bg-navy text-white">
-              <tr>
-                <th className="px-3 md:px-6 py-4 text-left text-xs font-bold uppercase tracking-wider sticky left-0 z-10 bg-navy w-12 md:w-auto">Rank</th>
-                <th className="px-3 md:px-6 py-4 text-left text-xs font-bold uppercase tracking-wider sticky left-[48px] md:left-[72px] z-10 bg-navy">Player</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Apps</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Goals</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Assists</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Clean Sheets</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">MoM 1</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">MoM 2</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">MoM 3</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">DoD</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Yellow Cards</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider">Red Cards</th>
-                <th className="px-6 py-4 text-center text-xs font-bold uppercase tracking-wider bg-navy/90">Fantasy Points</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-700">
-              {playerStats.map((player, index) => {
-                const getRowColors = () => {
-                  if (index === 0) return { bg: 'bg-yellow-600/30', sticky: 'bg-yellow-600' }; // Gold
-                  if (index === 1) return { bg: 'bg-gray-700/50', sticky: 'bg-gray-700' }; // Silver
-                  if (index === 2) return { bg: 'bg-amber-900/40', sticky: 'bg-amber-900' }; // Bronze
-                  return { bg: 'bg-slate-800', sticky: 'bg-slate-800' };
-                };
-                const colors = getRowColors();
-
-                return (
-                  <tr
-                    key={player.name}
-                    className={`hover:bg-slate-700 transition-colors ${colors.bg}`}
-                  >
-                    <td className={`px-2 md:px-6 py-4 text-base md:text-lg font-bold text-gray-100 sticky left-0 z-10 ${colors.sticky} w-12 md:w-auto`}>
-                      {index === 0 && '🥇'}
-                      {index === 1 && '🥈'}
-                      {index === 2 && '🥉'}
-                      {index > 2 && index + 1}
-                    </td>
-                    <td className={`px-3 md:px-6 py-4 text-sm md:text-base font-semibold text-gray-100 sticky left-[48px] md:left-[72px] z-10 tracking-wide ${colors.sticky}`}>
-                      {player.name}
-                    </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.appearances}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.goals}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.assists}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.cleanSheets}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.mom1}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.mom2}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.mom3}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.dod}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.yellowCards}
-                  </td>
-                  <td className="px-6 py-4 text-base text-center text-gray-300 font-light tabular-nums">
-                    {player.redCards}
-                  </td>
-                  <td className="px-6 py-4 text-xl text-center font-bold text-navy bg-gray-50 tabular-nums">
-                    {player.fantasyPoints}
-                  </td>
-                </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+        <PlayerStatsTable playerStats={playerStats} matches={matches} />
       )}
 
       <div className="mt-8 text-sm text-gray-500 font-light">
