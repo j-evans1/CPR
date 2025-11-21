@@ -335,8 +335,10 @@ export async function calculateMomWinners(matchKey: string): Promise<{
   mom3: string[];
 }> {
   const results = await getMomVoteResults(matchKey);
+  console.log('[calculateMomWinners] Vote results for matchKey:', matchKey, JSON.stringify(results, null, 2));
 
   if (results.length === 0) {
+    console.log('[calculateMomWinners] No votes found for this match');
     return { mom1: [], mom2: [], mom3: [] };
   }
 
@@ -354,10 +356,14 @@ export async function calculateMomWinners(matchKey: string): Promise<{
     voteGroups[votes].push(result.player_name);
   });
 
+  console.log('[calculateMomWinners] Vote groups:', JSON.stringify(voteGroups, null, 2));
+
   // Get unique vote counts in descending order
   const voteCounts = Object.keys(voteGroups)
     .map(Number)
     .sort((a, b) => b - a);
+
+  console.log('[calculateMomWinners] Vote counts (descending):', voteCounts);
 
   // Apply golf scoring
   let position = 1;
@@ -378,5 +384,7 @@ export async function calculateMomWinners(matchKey: string): Promise<{
     }
   }
 
-  return { mom1, mom2, mom3 };
+  const winners = { mom1, mom2, mom3 };
+  console.log('[calculateMomWinners] Final winners:', JSON.stringify(winners, null, 2));
+  return winners;
 }

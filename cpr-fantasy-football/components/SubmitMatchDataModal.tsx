@@ -197,8 +197,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
         }
       }
 
-      const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
-      const matchKey = `${match.date}-${matchDescription}`;
+      const matchKey = generateMatchKey(match.date, match.team, match.opponent);
 
       const playersArray = Array.from(playerMap.entries()).map(([name, stats]) => ({
         name,

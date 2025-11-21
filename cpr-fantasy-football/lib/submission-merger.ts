@@ -16,8 +16,7 @@ export async function mergeMatchesWithSubmissions(matches: Match[]): Promise<Mat
   const mergedMatches = await Promise.all(
     matches.map(async (match) => {
       // Generate match key (matching how it's stored in DB)
-      const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
-      const matchKey = `${match.date}-${matchDescription}`;
+      const matchKey = generateMatchKey(match.date, match.team, match.opponent);
 
       // Try to get submission
       const submission = await getMatchSubmission(matchKey);

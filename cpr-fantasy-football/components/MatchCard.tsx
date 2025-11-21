@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Match } from '@/lib/match-processor';
 import SubmitMatchDataModal from './SubmitMatchDataModal';
 import MoMVoteModal from './MoMVoteModal';
+import { generateMatchKey } from '@/lib/submission-merger';
 
 interface MatchCardProps {
   match: Match;
@@ -52,8 +53,7 @@ export default function MatchCard({ match }: MatchCardProps) {
     setClearError(null);
 
     try {
-      const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
-      const matchKey = `${match.date}-${matchDescription}`;
+      const matchKey = generateMatchKey(match.date, match.team, match.opponent);
 
       console.log('Clearing submission with matchKey:', matchKey);
 
@@ -92,8 +92,7 @@ export default function MatchCard({ match }: MatchCardProps) {
     setReportError(null);
 
     try {
-      const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
-      const matchKey = `${match.date}-${matchDescription}`;
+      const matchKey = generateMatchKey(match.date, match.team, match.opponent);
 
       const response = await fetch('/api/generate-match-report', {
         method: 'POST',

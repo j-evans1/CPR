@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { matchKey, matchData, players } = body;
 
+    console.log('[Match Submission] Received matchKey:', matchKey);
+    console.log('[Match Submission] Player names in submission:', players.map((p: any) => p.name));
+
     if (!matchKey || !matchData || !players) {
       return NextResponse.json(
         { error: 'matchKey, matchData, and players are required' },
@@ -40,7 +43,7 @@ export async function POST(request: NextRequest) {
 
     // Calculate MoM winners from votes
     const momWinners = await calculateMomWinners(matchKey);
-    console.log('MoM Winners calculated:', JSON.stringify(momWinners, null, 2));
+    console.log('[Match Submission] MoM Winners calculated:', JSON.stringify(momWinners, null, 2));
 
     // Apply MoM results to player data
     const playersWithMom = players.map((player: any) => {
@@ -50,7 +53,7 @@ export async function POST(request: NextRequest) {
         mom2: momWinners.mom2.includes(player.name) ? 1 : 0,
         mom3: momWinners.mom3.includes(player.name) ? 1 : 0,
       };
-      console.log(`Player ${player.name}: mom1=${playerWithMom.mom1}, mom2=${playerWithMom.mom2}, mom3=${playerWithMom.mom3}`);
+      console.log(`[Match Submission] Player ${player.name}: mom1=${playerWithMom.mom1}, mom2=${playerWithMom.mom2}, mom3=${playerWithMom.mom3}`);
       return playerWithMom;
     });
 
