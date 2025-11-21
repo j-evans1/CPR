@@ -420,7 +420,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
               <textarea
                 value={matchSummary}
                 onChange={(e) => setMatchSummary(e.target.value)}
-                placeholder="e.g., Hard-fought game with a dramatic finish. Smith scored a worldie in the 89th minute..."
+                placeholder="e.g., Hard-fought game against a nasty team of slugs, Albert's 3 foul throws a real low point even though Reece fought a spectator to prove he was related to Braveheart."
                 rows={4}
                 className="w-full px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none resize-none"
               />

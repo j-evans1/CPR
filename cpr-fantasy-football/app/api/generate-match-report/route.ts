@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
     const mom = playerStats?.find((p: { mom1: number }) => p.mom1 > 0)?.name || 'Not specified';
     const dod = playerStats?.find((p: { dod: number }) => p.dod > 0)?.name || 'Not specified';
 
-    const prompt = `You are a humorous football match reporter for a Sunday league team called CPR. Write a light-hearted, jokey match report for Instagram based on the following match information:
+    const prompt = `You are a humorous football match reporter for a Sunday league team called CPR (Clissold Park Rangers FC). Write a light-hearted, jokey match report for Instagram based on the following match information:
 
 Match: ${scoreline}
 Date: ${matchData.date}
@@ -46,9 +46,11 @@ Write a funny, engaging match report (around 150-200 words) that:
 - Has a witty opening about the result
 - Mentions key players and their contributions with humorous commentary
 - Makes light-hearted jokes about performances
-- Ends with a cheeky sign-off
 - Uses casual, British football banter style
 - Includes relevant football emojis
+
+IMPORTANT: Always end the report with these hashtags on a new line:
+#forzacpr #clissoldparkrangersfc
 
 Keep it fun, avoid being mean-spirited, and make it Instagram-ready!`;
 
