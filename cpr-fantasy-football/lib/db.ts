@@ -31,6 +31,18 @@ export interface PlayerSubmission {
   dod: number;
 }
 
+export interface MomVote {
+  id: number;
+  match_key: string;
+  player_name: string;
+  voted_at: Date;
+}
+
+export interface MomVoteResult {
+  player_name: string;
+  vote_count: number;
+}
+
 /**
  * Initialize database tables
  */
@@ -80,6 +92,23 @@ export async function initDb() {
       dod INTEGER DEFAULT 0
     )
   `;
+
+  // Create mom_votes table for anonymous voting
+  await sql`
+    CREATE TABLE IF NOT EXISTS mom_votes (
+      id SERIAL PRIMARY KEY,
+      match_key VARCHAR(255) NOT NULL,
+      player_name VARCHAR(100) NOT NULL,
+      voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    )
+  `;
+
+  // Create index for faster vote counting
+  try {
+    await sql`CREATE INDEX IF NOT EXISTS idx_mom_votes_match_key ON mom_votes(match_key)`;
+  } catch (e) {
+    console.log('Index already exists or error creating index:', e);
+  }
 }
 
 /**
@@ -257,4 +286,97 @@ export async function updateMatchReport(matchKey: string, matchReport: string) {
     SET match_report = ${matchReport}
     WHERE match_key = ${matchKey}
   `;
+}
+
+/**
+ * Submit a Man of the Match vote
+ */
+export async function submitMomVote(matchKey: string, playerName: string) {
+  await sql`
+    INSERT INTO mom_votes (match_key, player_name)
+    VALUES (${matchKey}, ${playerName})
+  `;
+}
+
+/**
+ * Get MoM vote results for a specific match
+ */
+export async function getMomVoteResults(matchKey: string): Promise<MomVoteResult[]> {
+  const result = await sql<MomVoteResult>`
+    SELECT player_name, COUNT(*) as vote_count
+    FROM mom_votes
+    WHERE match_key = ${matchKey}
+    GROUP BY player_name
+    ORDER BY vote_count DESC, player_name ASC
+  `;
+
+  return result.rows;
+}
+
+/**
+ * Get total number of votes for a match
+ */
+export async function getMomVoteCount(matchKey: string): Promise<number> {
+  const result = await sql<{ count: number }>`
+    SELECT COUNT(*) as count
+    FROM mom_votes
+    WHERE match_key = ${matchKey}
+  `;
+  return result.rows[0].count;
+}
+
+/**
+ * Calculate MoM winners using golf leaderboard scoring
+ * If tied for 1st, next place is 3rd (not 2nd)
+ */
+export async function calculateMomWinners(matchKey: string): Promise<{
+  mom1: string[];
+  mom2: string[];
+  mom3: string[];
+}> {
+  const results = await getMomVoteResults(matchKey);
+
+  if (results.length === 0) {
+    return { mom1: [], mom2: [], mom3: [] };
+  }
+
+  const mom1: string[] = [];
+  const mom2: string[] = [];
+  const mom3: string[] = [];
+
+  // Group players by vote count
+  const voteGroups: { [key: number]: string[] } = {};
+  results.forEach(result => {
+    const votes = Number(result.vote_count);
+    if (!voteGroups[votes]) {
+      voteGroups[votes] = [];
+    }
+    voteGroups[votes].push(result.player_name);
+  });
+
+  // Get unique vote counts in descending order
+  const voteCounts = Object.keys(voteGroups)
+    .map(Number)
+    .sort((a, b) => b - a);
+
+  // Apply golf scoring
+  let position = 1;
+  for (const voteCount of voteCounts) {
+    const players = voteGroups[voteCount];
+
+    if (position === 1) {
+      mom1.push(...players);
+      position += players.length; // If 2 tied for 1st, next position is 3
+    } else if (position === 2) {
+      mom2.push(...players);
+      position += players.length;
+    } else if (position === 3) {
+      mom3.push(...players);
+      break; // We only care about top 3 positions
+    } else {
+      break; // Past 3rd place
+    }
+  }
+
+  return { mom1, mom2, mom3 };
 }

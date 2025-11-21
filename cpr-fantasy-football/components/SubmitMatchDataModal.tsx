@@ -35,9 +35,6 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
   const [assists, setAssists] = useState<StatEntry[]>([]);
   const [yellowCards, setYellowCards] = useState<StatEntry[]>([]);
   const [redCards, setRedCards] = useState<StatEntry[]>([]);
-  const [mom1, setMom1] = useState<string>('');
-  const [mom2, setMom2] = useState<string>('');
-  const [mom3, setMom3] = useState<string>('');
   const [dod, setDod] = useState<string>('');
 
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -179,11 +176,6 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
           playerMap.get(entry.player)!.redCard += 1;
         }
       });
-
-      // Add MoM
-      if (mom1 && playerMap.has(mom1)) playerMap.get(mom1)!.mom1 = 1;
-      if (mom2 && playerMap.has(mom2)) playerMap.get(mom2)!.mom2 = 1;
-      if (mom3 && playerMap.has(mom3)) playerMap.get(mom3)!.mom3 = 1;
 
       // Add DoD - can be any player, even if not playing
       if (dod) {
@@ -437,13 +429,6 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
 
             {/* Red Cards */}
             {renderStatSection('Red Cards', redCards, setRedCards, false)}
-
-            {/* Man of Match - 3 separate dropdowns */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {renderSingleSelect('Man of Match 1st', mom1, setMom1, true)}
-              {renderSingleSelect('Man of Match 2nd', mom2, setMom2, true)}
-              {renderSingleSelect('Man of Match 3rd', mom3, setMom3, true)}
-            </div>
 
             {/* Dick of Day - any player from full list */}
             {renderSingleSelect('Dick of the Day', dod, setDod, false)}

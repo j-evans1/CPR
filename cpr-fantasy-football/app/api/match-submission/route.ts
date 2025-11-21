@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getMatchSubmission, upsertMatchSubmission, deleteMatchSubmission, submissionExists } from '@/lib/db';
+import { getMatchSubmission, upsertMatchSubmission, deleteMatchSubmission, submissionExists, calculateMomWinners } from '@/lib/db';
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,12 +38,29 @@ export async function POST(request: NextRequest) {
     // Check if submission already exists
     const exists = await submissionExists(matchKey);
 
-    const submissionId = await upsertMatchSubmission(matchKey, matchData, players);
+    // Calculate MoM winners from votes
+    const momWinners = await calculateMomWinners(matchKey);
+    console.log('MoM Winners calculated:', JSON.stringify(momWinners, null, 2));
+
+    // Apply MoM results to player data
+    const playersWithMom = players.map((player: any) => {
+      const playerWithMom = {
+        ...player,
+        mom1: momWinners.mom1.includes(player.name) ? 1 : 0,
+        mom2: momWinners.mom2.includes(player.name) ? 1 : 0,
+        mom3: momWinners.mom3.includes(player.name) ? 1 : 0,
+      };
+      console.log(`Player ${player.name}: mom1=${playerWithMom.mom1}, mom2=${playerWithMom.mom2}, mom3=${playerWithMom.mom3}`);
+      return playerWithMom;
+    });
+
+    const submissionId = await upsertMatchSubmission(matchKey, matchData, playersWithMom);
 
     return NextResponse.json({
       success: true,
       submissionId,
-      isUpdate: exists
+      isUpdate: exists,
+      momWinners
     });
   } catch (error) {
     console.error('Error creating/updating submission:', error);

@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Match } from '@/lib/match-processor';
 import SubmitMatchDataModal from './SubmitMatchDataModal';
+import MoMVoteModal from './MoMVoteModal';
 
 interface MatchCardProps {
   match: Match;
@@ -11,6 +12,7 @@ interface MatchCardProps {
 export default function MatchCard({ match }: MatchCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
   const [showSubmitModal, setShowSubmitModal] = useState(false);
+  const [showVoteModal, setShowVoteModal] = useState(false);
   const [showClearModal, setShowClearModal] = useState(false);
   const [clearPassword, setClearPassword] = useState('');
   const [clearError, setClearError] = useState<string | null>(null);
@@ -38,6 +40,11 @@ export default function MatchCard({ match }: MatchCardProps) {
     setShowSubmitModal(false);
     // Reload the page to show updated data
     window.location.reload();
+  };
+
+  const handleVoteSuccess = () => {
+    setShowVoteModal(false);
+    // Could optionally show a success message or update UI
   };
 
   const handleClearSubmission = async () => {
@@ -191,6 +198,15 @@ export default function MatchCard({ match }: MatchCardProps) {
                 className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors touch-manipulation"
               >
                 {match.isSubmitted ? 'Update Match Data' : 'Submit Match Data'}
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowVoteModal(true);
+                }}
+                className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white font-semibold rounded-lg transition-colors touch-manipulation"
+              >
+                MoM Vote
               </button>
               {match.isSubmitted && (
                 <button
@@ -384,6 +400,15 @@ export default function MatchCard({ match }: MatchCardProps) {
           match={match}
           onClose={() => setShowSubmitModal(false)}
           onSuccess={handleSubmitSuccess}
+        />
+      )}
+
+      {/* MoM Vote Modal */}
+      {showVoteModal && (
+        <MoMVoteModal
+          match={match}
+          onClose={() => setShowVoteModal(false)}
+          onSuccess={handleVoteSuccess}
         />
       )}
     </div>
