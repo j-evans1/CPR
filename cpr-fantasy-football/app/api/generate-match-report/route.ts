@@ -57,7 +57,6 @@ Keep it fun, avoid being mean-spirited, and make it Instagram-ready!`;
       model: openai('gpt-4o-mini'),
       prompt,
       temperature: 0.9, // Higher temperature for more creative/humorous output
-      maxTokens: 400,
     });
 
     // Save the generated report to the database
