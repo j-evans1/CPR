@@ -59,8 +59,11 @@ export async function DELETE(request: NextRequest) {
     const password = request.nextUrl.searchParams.get('password');
     const matchKey = request.nextUrl.searchParams.get('matchKey');
 
+    console.log('DELETE request received:', { password: password ? '***' : 'none', matchKey });
+
     // Simple password check
     if (password !== 'slug') {
+      console.log('Incorrect password provided');
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
@@ -68,18 +71,25 @@ export async function DELETE(request: NextRequest) {
     }
 
     if (!matchKey) {
+      console.log('No matchKey provided');
       return NextResponse.json(
         { error: 'matchKey parameter is required' },
         { status: 400 }
       );
     }
 
+    console.log('Attempting to delete submission for matchKey:', matchKey);
     await deleteMatchSubmission(matchKey);
-    return NextResponse.json({ success: true });
+    console.log('Successfully deleted submission for matchKey:', matchKey);
+
+    return NextResponse.json({
+      success: true,
+      message: 'Submission deleted successfully. The match will now show Google Sheets data.'
+    });
   } catch (error) {
     console.error('Error deleting submission:', error);
     return NextResponse.json(
-      { error: 'Failed to delete submission' },
+      { error: 'Failed to delete submission', details: error instanceof Error ? error.message : 'Unknown error' },
       { status: 500 }
     );
   }

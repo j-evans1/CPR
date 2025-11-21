@@ -216,9 +216,26 @@ export async function upsertMatchSubmission(
  * Delete a match submission and its player data
  */
 export async function deleteMatchSubmission(matchKey: string) {
-  await sql`
-    DELETE FROM match_submissions WHERE match_key = ${matchKey}
+  console.log('Deleting match submission with key:', matchKey);
+
+  // First, check if the submission exists
+  const exists = await submissionExists(matchKey);
+  if (!exists) {
+    console.log('No submission found with key:', matchKey);
+    throw new Error('Submission not found');
+  }
+
+  // Delete from match_submissions (player_submissions will be deleted automatically via CASCADE)
+  const result = await sql`
+    DELETE FROM match_submissions WHERE match_key = ${matchKey} RETURNING id
   `;
+
+  if (result.rowCount === 0) {
+    console.log('Delete operation returned 0 rows for key:', matchKey);
+    throw new Error('Failed to delete submission');
+  }
+
+  console.log('Successfully deleted match submission:', result.rows[0].id);
 }
 
 /**

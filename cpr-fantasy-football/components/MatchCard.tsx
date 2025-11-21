@@ -48,24 +48,33 @@ export default function MatchCard({ match }: MatchCardProps) {
       const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
       const matchKey = `${match.date}-${matchDescription}`;
 
+      console.log('Clearing submission with matchKey:', matchKey);
+
       const response = await fetch(`/api/match-submission?password=${encodeURIComponent(clearPassword)}&matchKey=${encodeURIComponent(matchKey)}`, {
         method: 'DELETE',
       });
 
+      const data = await response.json();
+
       if (!response.ok) {
-        const data = await response.json();
+        console.error('Clear submission failed:', data);
         if (response.status === 401) {
           setClearError('Incorrect password');
         } else {
-          throw new Error(data.error || 'Failed to clear submission');
+          setClearError(data.error || 'Failed to clear submission');
         }
         setIsClearing(false);
         return;
       }
 
-      // Success - reload page
-      window.location.reload();
+      console.log('Submission cleared successfully:', data);
+
+      // Success - reload page after a brief delay to ensure database transaction completes
+      setTimeout(() => {
+        window.location.reload();
+      }, 500);
     } catch (err) {
+      console.error('Clear submission error:', err);
       setClearError(err instanceof Error ? err.message : 'Failed to clear submission');
       setIsClearing(false);
     }
