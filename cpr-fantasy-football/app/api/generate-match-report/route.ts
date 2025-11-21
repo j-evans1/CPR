@@ -32,6 +32,27 @@ export async function POST(request: NextRequest) {
     const mom = playerStats?.find((p: { mom1: number }) => p.mom1 > 0)?.name || 'Not specified';
     const dod = playerStats?.find((p: { dod: number }) => p.dod > 0)?.name || 'Not specified';
 
+    // Check if captains are playing
+    const captainNames = ['J. Heatley', 'S. Comb', 'Joe Heatley', 'Sam Comb'];
+    const playingPlayers = playerStats?.filter((p: { appearance: number }) => p.appearance > 0).map((p: { name: string }) => p.name) || [];
+    const captainsPlaying = captainNames.some(captain => playingPlayers.includes(captain));
+
+    // Determine result margin
+    const goalDifference = matchData.cprScore - matchData.opponentScore;
+    const bigWin = goalDifference > 1;
+    const bigLoss = goalDifference < -1;
+
+    let captainContext = '';
+    if (bigLoss) {
+      captainContext = captainsPlaying
+        ? "IMPORTANT: Blame the loss heavily on the captain's (J. Heatley/Joe Heatley or S. Comb/Sam Comb) poor footballing ability and terrible tactical decisions."
+        : "IMPORTANT: Blame the loss on captains J. Heatley (Joe Heatley) and S. Comb (Sam Comb) for abandoning the team when they needed them most.";
+    } else if (bigWin) {
+      captainContext = captainsPlaying
+        ? "IMPORTANT: Acknowledge the captain's (J. Heatley/Joe Heatley or S. Comb/Sam Comb) good tactics, but still question their footballing ability in a cheeky way."
+        : "IMPORTANT: Mention that captains J. Heatley (Joe Heatley) and S. Comb (Sam Comb) weren't even there, but somehow the tactics worked anyway.";
+    }
+
     const prompt = `You are a humorous football match reporter for a Sunday league team called CPR (Clissold Park Rangers FC). Write a light-hearted, jokey match report for Instagram based on the following match information:
 
 Match: ${scoreline}
@@ -41,6 +62,7 @@ Goals: ${topScorers}
 Assists: ${topAssisters}
 Man of the Match: ${mom}
 Dick of the Day: ${dod}
+${captainContext ? `\n${captainContext}\n` : ''}
 
 Write a funny, engaging match report (around 150-200 words) that:
 - Has a witty opening about the result
