@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 from src.match_processor import get_matches, get_match_result_badge
+from src.style import load_css
 
 
 st.set_page_config(
@@ -10,6 +11,9 @@ st.set_page_config(
     page_icon="⚽",
     layout="wide",
 )
+
+# Load custom CSS
+load_css()
 
 
 def main():

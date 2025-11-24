@@ -7,6 +7,7 @@ from .fantasy_processor import get_fantasy_league, get_team_players_df
 from .match_processor import get_matches, get_match_result_badge
 from .payment_processor import get_player_payments
 from .fines_processor import get_player_fines, calculate_filtered_fines
+from .style import load_css
 
 __all__ = [
     "CSV_URLS",
@@ -26,4 +27,5 @@ __all__ = [
     "get_player_payments",
     "get_player_fines",
     "calculate_filtered_fines",
+    "load_css",
 ]

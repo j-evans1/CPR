@@ -1,8 +1,9 @@
 [theme]
-primaryColor = "#1e40af"
-backgroundColor = "#1e293b"
-secondaryBackgroundColor = "#334155"
-textColor = "#f1f5f9"
+# Matching Next.js app colors
+primaryColor = "#334960"  # Navy
+backgroundColor = "#0f172a"  # Slate-900
+secondaryBackgroundColor = "#1e293b"  # Slate-800
+textColor = "#e2e8f0"  # Slate-200
 font = "sans serif"
 
 [server]

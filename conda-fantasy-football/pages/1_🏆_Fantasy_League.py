@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 from src.fantasy_processor import get_fantasy_league, get_team_players_df
+from src.style import load_css
 
 
 st.set_page_config(
@@ -10,6 +11,9 @@ st.set_page_config(
     page_icon="🏆",
     layout="wide",
 )
+
+# Load custom CSS
+load_css()
 
 
 def main():

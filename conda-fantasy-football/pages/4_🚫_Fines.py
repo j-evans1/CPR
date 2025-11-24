@@ -3,6 +3,7 @@
 import streamlit as st
 import pandas as pd
 from src.fines_processor import get_player_fines, calculate_filtered_fines
+from src.style import load_css
 
 
 st.set_page_config(
@@ -10,6 +11,9 @@ st.set_page_config(
     page_icon="🚫",
     layout="wide",
 )
+
+# Load custom CSS
+load_css()
 
 
 def format_currency(amount: float) -> str:

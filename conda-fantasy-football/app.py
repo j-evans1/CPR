@@ -8,6 +8,7 @@ tracking player statistics and league management for the 2025/26 season.
 import streamlit as st
 import pandas as pd
 from src.data_processor import get_player_stats, get_medal_emoji
+from src.style import load_css
 
 
 # Page configuration
@@ -17,6 +18,9 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Load custom CSS
+load_css()
 
 
 def style_dataframe(df: pd.DataFrame) -> pd.DataFrame:
