@@ -1,0 +1,12 @@
+name: cpr-fantasy-football
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.11
+  - pandas>=2.0.0
+  - requests>=2.31.0
+  - pip
+  - pip:
+    - streamlit>=1.31.0
+    - altair>=5.0.0
