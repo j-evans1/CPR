@@ -52,7 +52,8 @@ def get_matches() -> List[Dict]:
     Returns:
         List of match dictionaries sorted by date (most recent first)
     """
-    match_data = fetch_csv(CSV_URLS["MATCH_DETAILS"])
+    # Match data uses generic column names like '_1', '_2' to match TypeScript behavior
+    match_data = fetch_csv(CSV_URLS["MATCH_DETAILS"], use_generic_headers=True)
 
     # Skip first 3 rows (headers)
     data_rows = match_data.iloc[3:]

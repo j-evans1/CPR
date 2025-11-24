@@ -15,7 +15,8 @@ def get_player_stats() -> pd.DataFrame:
         DataFrame with player statistics sorted by fantasy points (highest first)
     """
     # Fetch both match data and player data
-    match_data = fetch_csv(CSV_URLS["MATCH_DETAILS"])
+    # Match data uses generic column names like '_1', '_2' to match TypeScript behavior
+    match_data = fetch_csv(CSV_URLS["MATCH_DETAILS"], use_generic_headers=True)
     player_data = fetch_csv(CSV_URLS["PLAYER_DATA"])
 
     # Skip first 3 rows (headers and empty rows) for match data
@@ -104,6 +105,10 @@ def get_player_stats() -> pd.DataFrame:
 
     # Convert to DataFrame
     df = pd.DataFrame.from_dict(player_stats, orient="index")
+
+    # Check if DataFrame is empty
+    if df.empty:
+        return df
 
     # Sort by fantasy points (descending)
     df = df.sort_values("fantasy_points", ascending=False).reset_index(drop=True)

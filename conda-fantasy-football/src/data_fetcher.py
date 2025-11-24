@@ -8,19 +8,26 @@ import re
 
 
 @st.cache_data(ttl=60)  # Cache for 60 seconds
-def fetch_csv(url: str, skip_rows: int = 0) -> pd.DataFrame:
+def fetch_csv(url: str, skip_rows: int = 0, use_generic_headers: bool = False) -> pd.DataFrame:
     """
     Fetch and parse CSV data from a URL with caching.
 
     Args:
         url: The URL of the CSV file to fetch
         skip_rows: Number of rows to skip at the beginning (default: 0)
+        use_generic_headers: If True, uses generic column names like '_1', '_2' instead of CSV headers
 
     Returns:
         DataFrame containing the parsed CSV data
     """
     try:
-        df = pd.read_csv(url, skiprows=skip_rows)
+        if use_generic_headers:
+            # Read without headers and create generic column names like '_1', '_2', etc.
+            df = pd.read_csv(url, header=None, skiprows=skip_rows)
+            # Rename columns to match TypeScript PapaParse behavior: '_1', '_2', etc.
+            df.columns = [f'_{i+1}' for i in range(len(df.columns))]
+        else:
+            df = pd.read_csv(url, skiprows=skip_rows)
         return df
     except Exception as e:
         st.error(f"Error fetching CSV from {url}: {str(e)}")

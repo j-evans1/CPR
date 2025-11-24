@@ -20,7 +20,8 @@ def get_player_fines() -> pd.DataFrame:
     Returns:
         DataFrame with player fine details sorted by total fines (highest first)
     """
-    fines_data = fetch_csv(CSV_URLS["FINES"], skip_rows=0)
+    # Fines data uses generic column names (no actual headers in CSV)
+    fines_data = fetch_csv(CSV_URLS["FINES"], use_generic_headers=True)
 
     player_map: Dict[str, Dict] = {}
 
@@ -32,11 +33,11 @@ def get_player_fines() -> pd.DataFrame:
 
         for _, row in fines_rows.iterrows():
             try:
-                # Column indices: 0 is empty, 1 is Date, 2 is Fines, 3 is Description, 4 is Player
-                player_name = str(row.iloc[4]).strip() if len(row) > 4 else ""
-                fine = parse_number(row.iloc[2] if len(row) > 2 else 0)
-                date = str(row.iloc[1]).strip() if len(row) > 1 else ""
-                description = str(row.iloc[3]).strip() if len(row) > 3 else ""
+                # Column names: _1 is empty, _2 is Date, _3 is Fines, _4 is Description, _5 is Player
+                player_name = str(row.get('_5', '')).strip()
+                fine = parse_number(row.get('_3', 0))
+                date = str(row.get('_2', '')).strip()
+                description = str(row.get('_4', '')).strip()
 
                 if not player_name or not date:
                     continue

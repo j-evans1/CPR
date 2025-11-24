@@ -24,9 +24,11 @@ def get_player_payments() -> pd.DataFrame:
     """
     # Fetch all data sources
     player_data = fetch_csv(CSV_URLS["PLAYER_DATA"])
-    match_data = fetch_csv(CSV_URLS["MATCH_DETAILS"])
-    bank_data = fetch_csv(CSV_URLS["BANK_STATEMENT"], skip_rows=0)  # No headers
-    fines_data = fetch_csv(CSV_URLS["FINES"], skip_rows=0)  # No headers
+    # Match data uses generic column names like '_1', '_2' to match TypeScript behavior
+    match_data = fetch_csv(CSV_URLS["MATCH_DETAILS"], use_generic_headers=True)
+    # Bank and fines data use generic headers (no actual headers in CSV)
+    bank_data = fetch_csv(CSV_URLS["BANK_STATEMENT"], use_generic_headers=True)
+    fines_data = fetch_csv(CSV_URLS["FINES"], use_generic_headers=True)
 
     player_map: Dict[str, Dict] = {}
 
@@ -74,21 +76,21 @@ def get_player_payments() -> pd.DataFrame:
             player["match_details"].append({"date": date, "fee": fee, "game": game})
 
     # Process bank payments
-    # Bank statement CSV has no headers, we need to skip the first row if it's a header
-    # Let's check if first row looks like a header
+    # Bank statement CSV has no headers, skip first row if it looks like a header
     if not bank_data.empty:
         first_row = bank_data.iloc[0]
         # If first column contains "Date" or similar, skip it
-        if str(first_row.iloc[0]).strip().lower() in ["date", "Date"]:
+        if str(first_row.get('_1', '')).strip().lower() in ["date"]:
             bank_data = bank_data.iloc[1:]
 
     for _, row in bank_data.iterrows():
-        # Access by position using column indices
+        # Access by column names (indices converted to '_1', '_2', etc.)
         try:
-            date = str(row.iloc[BANK_COLUMNS["DATE"]]).strip() if len(row) > BANK_COLUMNS["DATE"] else ""
-            description = str(row.iloc[BANK_COLUMNS["DESCRIPTION"]]).strip() if len(row) > BANK_COLUMNS["DESCRIPTION"] else ""
-            payment = parse_number(row.iloc[BANK_COLUMNS["CREDIT"]] if len(row) > BANK_COLUMNS["CREDIT"] else 0)
-            player_name_from_bank = str(row.iloc[BANK_COLUMNS["PLAYER"]]).strip() if len(row) > BANK_COLUMNS["PLAYER"] else ""
+            # Convert index to column name: index 0 -> '_1', index 1 -> '_2', etc.
+            date = str(row.get(f"_{BANK_COLUMNS['DATE']+1}", "")).strip()
+            description = str(row.get(f"_{BANK_COLUMNS['DESCRIPTION']+1}", "")).strip()
+            payment = parse_number(row.get(f"_{BANK_COLUMNS['CREDIT']+1}", 0))
+            player_name_from_bank = str(row.get(f"_{BANK_COLUMNS['PLAYER']+1}", "")).strip()
 
             # Skip if no player name or payment
             if not player_name_from_bank or payment == 0 or not date:
@@ -122,11 +124,11 @@ def get_player_payments() -> pd.DataFrame:
         fines_rows = fines_data.iloc[4:]
         for _, row in fines_rows.iterrows():
             try:
-                # Column indices: 0 is empty, 1 is Date, 2 is Fines, 3 is Description, 4 is Player
-                player_name = str(row.iloc[4]).strip() if len(row) > 4 else ""
-                fine = parse_number(row.iloc[2] if len(row) > 2 else 0)
-                date = str(row.iloc[1]).strip() if len(row) > 1 else ""
-                description = str(row.iloc[3]).strip() if len(row) > 3 else ""
+                # Column names: _1 is empty, _2 is Date, _3 is Fines, _4 is Description, _5 is Player
+                player_name = str(row.get('_5', '')).strip()
+                fine = parse_number(row.get('_3', 0))
+                date = str(row.get('_2', '')).strip()
+                description = str(row.get('_4', '')).strip()
 
                 if not player_name or not date or fine <= 0:
                     continue
