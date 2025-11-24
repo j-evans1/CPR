@@ -199,6 +199,14 @@ streamlit run app.py --server.port 8501
 - **Pandas** - Data processing and analysis
 - **Requests** - HTTP library for CSV fetching
 
+## Security
+
+This project follows security best practices for dependency management. See [SECURITY.md](SECURITY.md) for:
+- Package security guidelines
+- How to check for vulnerabilities
+- Update strategies
+- Security audit procedures
+
 ## Contributing
 
 This is a private project for Clissold Park Rangers FC.
