@@ -327,17 +327,29 @@ export default function MoMVoteModal({ match, onClose, onSuccess }: MoMVoteModal
                 {resultsRevealed ? (
                   <div className="mb-6">
                     {/* Winner Announcement */}
-                    {results[0] && (
-                      <div className="bg-gradient-to-r from-yellow-600/30 to-yellow-800/30 border-2 border-yellow-500 rounded-lg p-4 mb-4 text-center">
-                        <div className="flex items-center justify-center gap-2 mb-1">
-                          <span className="text-3xl">🏆</span>
-                          <h4 className="text-xl font-bold text-yellow-200">Man of the Match</h4>
-                          <span className="text-3xl">🏆</span>
+                    {results[0] && (() => {
+                      // Find all players tied for first place
+                      const firstPlaceVotes = results[0].vote_count;
+                      const winners = results.filter(r => r.vote_count === firstPlaceVotes);
+
+                      return (
+                        <div className="bg-gradient-to-r from-yellow-600/30 to-yellow-800/30 border-2 border-yellow-500 rounded-lg p-4 mb-4 text-center">
+                          <div className="flex items-center justify-center gap-2 mb-1">
+                            <span className="text-3xl">🏆</span>
+                            <h4 className="text-xl font-bold text-yellow-200">
+                              {winners.length > 1 ? 'Joint Men of the Match' : 'Man of the Match'}
+                            </h4>
+                            <span className="text-3xl">🏆</span>
+                          </div>
+                          <p className="text-2xl font-bold text-white mt-2">
+                            {winners.map(w => w.player_name).join(' & ')}
+                          </p>
+                          <p className="text-yellow-300 mt-1">
+                            {firstPlaceVotes} vote{firstPlaceVotes !== 1 ? 's' : ''} ({Math.round((firstPlaceVotes / totalVotes) * 100)}%)
+                          </p>
                         </div>
-                        <p className="text-2xl font-bold text-white mt-2">{results[0].player_name}</p>
-                        <p className="text-yellow-300 mt-1">{results[0].vote_count} vote{results[0].vote_count !== 1 ? 's' : ''} ({Math.round((results[0].vote_count / totalVotes) * 100)}%)</p>
-                      </div>
-                    )}
+                      );
+                    })()}
 
                     {/* Results Table */}
                     <div className="bg-slate-700/50 rounded-lg overflow-hidden border border-slate-600">
@@ -351,37 +363,47 @@ export default function MoMVoteModal({ match, onClose, onSuccess }: MoMVoteModal
                           </tr>
                         </thead>
                         <tbody>
-                          {results.map((result, idx) => (
-                            <tr
-                              key={idx}
-                              className={`border-b border-slate-600 last:border-b-0 ${
-                                idx === 0 ? 'bg-yellow-600/10' :
-                                idx === 1 ? 'bg-gray-500/10' :
-                                idx === 2 ? 'bg-orange-600/10' :
-                                'bg-slate-800/50'
-                              }`}
-                            >
-                              <td className="px-4 py-3">
-                                <div className="flex items-center gap-2">
-                                  {idx === 0 && <span className="text-xl">🥇</span>}
-                                  {idx === 1 && <span className="text-xl">🥈</span>}
-                                  {idx === 2 && <span className="text-xl">🥉</span>}
-                                  {idx > 2 && <span className="text-gray-400 font-medium">{idx + 1}</span>}
-                                </div>
-                              </td>
-                              <td className="px-4 py-3">
-                                <span className={`font-medium ${idx === 0 ? 'text-yellow-200' : idx === 1 ? 'text-gray-300' : idx === 2 ? 'text-orange-300' : 'text-gray-300'}`}>
-                                  {result.player_name}
-                                </span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="text-gray-100 font-semibold">{result.vote_count}</span>
-                              </td>
-                              <td className="px-4 py-3 text-right">
-                                <span className="text-gray-300 text-sm">{Math.round((result.vote_count / totalVotes) * 100)}%</span>
-                              </td>
-                            </tr>
-                          ))}
+                          {results.map((result, idx) => {
+                            // Calculate golf-style ranking (ties share same rank, next rank skips)
+                            let rank = 1;
+                            for (let i = 0; i < idx; i++) {
+                              if (results[i].vote_count !== results[i + 1]?.vote_count) {
+                                rank = i + 2;
+                              }
+                            }
+
+                            return (
+                              <tr
+                                key={idx}
+                                className={`border-b border-slate-600 last:border-b-0 ${
+                                  rank === 1 ? 'bg-yellow-600/10' :
+                                  rank === 2 ? 'bg-gray-500/10' :
+                                  rank === 3 ? 'bg-orange-600/10' :
+                                  'bg-slate-800/50'
+                                }`}
+                              >
+                                <td className="px-4 py-3">
+                                  <div className="flex items-center gap-2">
+                                    {rank === 1 && <span className="text-xl">🥇</span>}
+                                    {rank === 2 && <span className="text-xl">🥈</span>}
+                                    {rank === 3 && <span className="text-xl">🥉</span>}
+                                    {rank > 3 && <span className="text-gray-400 font-medium">{rank}</span>}
+                                  </div>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <span className={`font-medium ${rank === 1 ? 'text-yellow-200' : rank === 2 ? 'text-gray-300' : rank === 3 ? 'text-orange-300' : 'text-gray-300'}`}>
+                                    {result.player_name}
+                                  </span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <span className="text-gray-100 font-semibold">{result.vote_count}</span>
+                                </td>
+                                <td className="px-4 py-3 text-right">
+                                  <span className="text-gray-300 text-sm">{Math.round((result.vote_count / totalVotes) * 100)}%</span>
+                                </td>
+                              </tr>
+                            );
+                          })}
                         </tbody>
                         <tfoot>
                           <tr className="bg-slate-700 border-t-2 border-slate-500">
