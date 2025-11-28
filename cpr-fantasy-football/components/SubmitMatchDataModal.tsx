@@ -295,11 +295,11 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                 />
               )}
               {withQuantity && (
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1">
                   <button
                     type="button"
                     onClick={() => updateEntry(setter, index, 'quantity', Math.max(1, (entry.quantity || 1) - 1))}
-                    className="flex-shrink-0 w-8 h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg flex items-center justify-center"
+                    className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-base sm:text-lg flex items-center justify-center"
                   >
                     −
                   </button>
@@ -311,12 +311,12 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                     value={entry.quantity || 1}
                     onChange={(e) => updateEntry(setter, index, 'quantity', parseInt(e.target.value) || 1)}
                     onFocus={(e) => e.target.select()}
-                    className="w-12 px-2 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-10 sm:w-12 px-1 sm:px-2 py-1.5 sm:py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-sm sm:text-base font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
                     onClick={() => updateEntry(setter, index, 'quantity', (entry.quantity || 1) + 1)}
-                    className="flex-shrink-0 w-8 h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg flex items-center justify-center"
+                    className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-base sm:text-lg flex items-center justify-center"
                   >
                     +
                   </button>
@@ -325,7 +325,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
               <button
                 type="button"
                 onClick={() => removeEntry(setter, index)}
-                className="px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+                className="px-2 sm:px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
               >
                 ✕
               </button>
@@ -505,14 +505,14 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
             {/* Scoreline */}
             <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
               <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Final Scoreline</h4>
-              <div className="flex items-center gap-4">
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-400 mb-1">{match.team}</label>
-                  <div className="flex items-center gap-2 justify-center">
+              <div className="flex items-center gap-2 sm:gap-4">
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[10px] sm:text-xs text-gray-400 mb-1 truncate">{match.team}</label>
+                  <div className="flex items-center gap-1 sm:gap-2 justify-center">
                     <button
                       type="button"
                       onClick={() => setCprScore(Math.max(0, cprScore - 1))}
-                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                      className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg sm:text-xl flex items-center justify-center"
                     >
                       −
                     </button>
@@ -524,25 +524,25 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                       value={cprScore}
                       onChange={(e) => setCprScore(parseInt(e.target.value) || 0)}
                       onFocus={(e) => e.target.select()}
-                      className="w-16 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-12 sm:w-16 px-2 sm:px-3 py-1 sm:py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-xl sm:text-2xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <button
                       type="button"
                       onClick={() => setCprScore(cprScore + 1)}
-                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                      className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg sm:text-xl flex items-center justify-center"
                     >
                       +
                     </button>
                   </div>
                 </div>
-                <div className="text-2xl text-gray-400 font-bold">-</div>
-                <div className="flex-1">
-                  <label className="block text-xs text-gray-400 mb-1">{match.opponent}</label>
-                  <div className="flex items-center gap-2 justify-center">
+                <div className="text-xl sm:text-2xl text-gray-400 font-bold flex-shrink-0">-</div>
+                <div className="flex-1 min-w-0">
+                  <label className="block text-[10px] sm:text-xs text-gray-400 mb-1 truncate">{match.opponent}</label>
+                  <div className="flex items-center gap-1 sm:gap-2 justify-center">
                     <button
                       type="button"
                       onClick={() => setOpponentScore(Math.max(0, opponentScore - 1))}
-                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                      className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg sm:text-xl flex items-center justify-center"
                     >
                       −
                     </button>
@@ -554,12 +554,12 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                       value={opponentScore}
                       onChange={(e) => setOpponentScore(parseInt(e.target.value) || 0)}
                       onFocus={(e) => e.target.select()}
-                      className="w-16 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                      className="w-12 sm:w-16 px-2 sm:px-3 py-1 sm:py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-xl sm:text-2xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                     />
                     <button
                       type="button"
                       onClick={() => setOpponentScore(opponentScore + 1)}
-                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                      className="flex-shrink-0 w-8 h-8 sm:w-10 sm:h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg sm:text-xl flex items-center justify-center"
                     >
                       +
                     </button>
