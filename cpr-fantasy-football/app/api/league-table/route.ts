@@ -31,10 +31,9 @@ async function fetchLeagueTable(divisionSeason: string): Promise<LeagueTable> {
   try {
     // Try serverless chromium first (Vercel, AWS Lambda, etc.)
     browser = await puppeteer.launch({
-      args: chromium.args,
-      defaultViewport: chromium.defaultViewport,
+      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
       executablePath: await chromium.executablePath(),
-      headless: chromium.headless,
+      headless: true,
     });
   } catch (error) {
     // Fallback to local Chrome/Chromium for development
