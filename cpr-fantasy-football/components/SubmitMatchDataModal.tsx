@@ -20,8 +20,8 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
   const [allPlayers, setAllPlayers] = useState<string[]>([]);
   const [loadingPlayers, setLoadingPlayers] = useState(true);
 
-  // Get players from the match
-  const matchPlayers = match.players.map(p => p.name).sort();
+  // Get players from the match - now managed as state
+  const [matchPlayers, setMatchPlayers] = useState<string[]>(match.players.map(p => p.name).sort());
 
   // Scoreline
   const [cprScore, setCprScore] = useState<number>(match.cprScore);
@@ -45,6 +45,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
   useEffect(() => {
     loadPlayers();
     checkForExistingSubmission();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadPlayers = async () => {
@@ -60,7 +61,6 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
   };
 
   const checkForExistingSubmission = async () => {
-    const matchDescription = `${match.team} ${match.score} ${match.opponent}`;
     const matchKey = generateMatchKey(match.date, match.team, match.opponent);
 
     try {
@@ -103,6 +103,33 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
 
   const removeEntry = (setter: React.Dispatch<React.SetStateAction<StatEntry[]>>, index: number) => {
     setter(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const removePlayerFromTeam = (playerName: string) => {
+    setMatchPlayers(prev => prev.filter(p => p !== playerName));
+    // Also remove any stats for this player
+    setGoals(prev => prev.filter(g => g.player !== playerName));
+    setAssists(prev => prev.filter(a => a.player !== playerName));
+    setYellowCards(prev => prev.filter(y => y.player !== playerName));
+    setRedCards(prev => prev.filter(r => r.player !== playerName));
+    if (dod === playerName) setDod('');
+  };
+
+  const addPlayerToTeam = (playerName: string) => {
+    if (playerName && !matchPlayers.includes(playerName)) {
+      setMatchPlayers(prev => [...prev, playerName].sort());
+    }
+  };
+
+  const addCustomPlayerToTeam = (playerName: string) => {
+    const trimmedName = playerName.trim();
+    if (trimmedName && !matchPlayers.includes(trimmedName)) {
+      setMatchPlayers(prev => [...prev, trimmedName].sort());
+      // Also add to all players list if not already there
+      if (!allPlayers.includes(trimmedName)) {
+        setAllPlayers(prev => [...prev, trimmedName].sort());
+      }
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -268,13 +295,32 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                 />
               )}
               {withQuantity && (
-                <input
-                  type="number"
-                  min="1"
-                  value={entry.quantity || 1}
-                  onChange={(e) => updateEntry(setter, index, 'quantity', parseInt(e.target.value))}
-                  className="w-20 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none"
-                />
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => updateEntry(setter, index, 'quantity', Math.max(1, (entry.quantity || 1) - 1))}
+                    className="flex-shrink-0 w-8 h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg flex items-center justify-center"
+                  >
+                    −
+                  </button>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    pattern="[0-9]*"
+                    min="1"
+                    value={entry.quantity || 1}
+                    onChange={(e) => updateEntry(setter, index, 'quantity', parseInt(e.target.value) || 1)}
+                    onFocus={(e) => e.target.select()}
+                    className="w-12 px-2 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => updateEntry(setter, index, 'quantity', (entry.quantity || 1) + 1)}
+                    className="flex-shrink-0 w-8 h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-lg flex items-center justify-center"
+                  >
+                    +
+                  </button>
+                </div>
               )}
               <button
                 type="button"
@@ -356,7 +402,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
           <div className="m-6 mb-0 bg-yellow-900/30 border-2 border-yellow-600 rounded-lg p-4">
             <h3 className="text-lg font-bold text-yellow-500 mb-2">⚠️ Hold up, slug!</h3>
             <p className="text-yellow-200">
-              Match data has already been submitted. If you proceed, you'll overwrite the existing submission.
+              Match data has already been submitted. If you proceed, you&apos;ll overwrite the existing submission.
               Kangaroo court awaits for false submissions! 🦘⚖️
             </p>
           </div>
@@ -372,30 +418,152 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
         {/* Form */}
         <form onSubmit={handleSubmit} className="p-6">
           <div className="space-y-4">
+            {/* Team Sheet Management */}
+            <div className="bg-blue-900/20 border border-blue-600 rounded-lg p-4">
+              <h4 className="text-sm font-semibold text-blue-300 uppercase tracking-wide mb-3">
+                Team Sheet ({matchPlayers.length} players)
+              </h4>
+
+              {/* Current Players */}
+              <div className="mb-4">
+                <div className="flex flex-wrap gap-2">
+                  {matchPlayers.map(player => (
+                    <div
+                      key={player}
+                      className="flex items-center gap-2 bg-slate-700 border border-slate-600 rounded-lg px-3 py-2"
+                    >
+                      <span className="text-gray-100 text-sm">{player}</span>
+                      <button
+                        type="button"
+                        onClick={() => removePlayerFromTeam(player)}
+                        className="text-red-400 hover:text-red-300 font-bold text-sm"
+                        title="Remove from team"
+                      >
+                        ×
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Add Player Controls */}
+              <div className="space-y-3 border-t border-blue-700 pt-3">
+                <div>
+                  <label className="block text-xs text-blue-200 mb-1">Add player from list:</label>
+                  <select
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        addPlayerToTeam(e.target.value);
+                        e.target.value = '';
+                      }
+                    }}
+                    className="w-full px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-sm"
+                  >
+                    <option value="">Select player to add...</option>
+                    {allPlayers
+                      .filter(p => !matchPlayers.includes(p))
+                      .map(player => (
+                        <option key={player} value={player}>{player}</option>
+                      ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-blue-200 mb-1">Or add new player:</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      id="new-player-input"
+                      placeholder="Enter player name"
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          const input = e.currentTarget;
+                          addCustomPlayerToTeam(input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="flex-1 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-sm"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const input = document.getElementById('new-player-input') as HTMLInputElement;
+                        if (input) {
+                          addCustomPlayerToTeam(input.value);
+                          input.value = '';
+                        }
+                      }}
+                      className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 text-sm font-medium"
+                    >
+                      Add
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+
             {/* Scoreline */}
             <div className="bg-slate-700 rounded-lg p-4 border border-slate-600">
               <h4 className="text-sm font-semibold text-gray-300 uppercase tracking-wide mb-3">Final Scoreline</h4>
               <div className="flex items-center gap-4">
                 <div className="flex-1">
                   <label className="block text-xs text-gray-400 mb-1">{match.team}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={cprScore}
-                    onChange={(e) => setCprScore(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl font-bold"
-                  />
+                  <div className="flex items-center gap-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setCprScore(Math.max(0, cprScore - 1))}
+                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      min="0"
+                      value={cprScore}
+                      onChange={(e) => setCprScore(parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
+                      className="w-16 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setCprScore(cprScore + 1)}
+                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
                 <div className="text-2xl text-gray-400 font-bold">-</div>
                 <div className="flex-1">
                   <label className="block text-xs text-gray-400 mb-1">{match.opponent}</label>
-                  <input
-                    type="number"
-                    min="0"
-                    value={opponentScore}
-                    onChange={(e) => setOpponentScore(parseInt(e.target.value) || 0)}
-                    className="w-full px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl font-bold"
-                  />
+                  <div className="flex items-center gap-2 justify-center">
+                    <button
+                      type="button"
+                      onClick={() => setOpponentScore(Math.max(0, opponentScore - 1))}
+                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                    >
+                      −
+                    </button>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      pattern="[0-9]*"
+                      min="0"
+                      value={opponentScore}
+                      onChange={(e) => setOpponentScore(parseInt(e.target.value) || 0)}
+                      onFocus={(e) => e.target.select()}
+                      className="w-16 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-2xl font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setOpponentScore(opponentScore + 1)}
+                      className="flex-shrink-0 w-10 h-10 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-xl flex items-center justify-center"
+                    >
+                      +
+                    </button>
+                  </div>
                 </div>
               </div>
             </div>

@@ -69,6 +69,7 @@ export async function initDb() {
   try {
     await sql`ALTER TABLE match_submissions ADD COLUMN IF NOT EXISTS match_summary TEXT`;
     await sql`ALTER TABLE match_submissions ADD COLUMN IF NOT EXISTS match_report TEXT`;
+    await sql`ALTER TABLE match_submissions ADD COLUMN IF NOT EXISTS mom_results_revealed BOOLEAN DEFAULT FALSE`;
   } catch (e) {
     // Columns might already exist, continue
     console.log('Columns already exist or error adding columns:', e);
@@ -99,13 +100,22 @@ export async function initDb() {
       id SERIAL PRIMARY KEY,
       match_key VARCHAR(255) NOT NULL,
       player_name VARCHAR(100) NOT NULL,
+      voter_id VARCHAR(255),
       voted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
     )
   `;
 
+  // Add voter_id column to existing table if it doesn't exist
+  try {
+    await sql`ALTER TABLE mom_votes ADD COLUMN IF NOT EXISTS voter_id VARCHAR(255)`;
+  } catch (e) {
+    console.log('voter_id column already exists or error adding column:', e);
+  }
+
   // Create index for faster vote counting
   try {
     await sql`CREATE INDEX IF NOT EXISTS idx_mom_votes_match_key ON mom_votes(match_key)`;
+    await sql`CREATE INDEX IF NOT EXISTS idx_mom_votes_voter ON mom_votes(match_key, voter_id)`;
   } catch (e) {
     console.log('Index already exists or error creating index:', e);
   }
@@ -290,12 +300,34 @@ export async function updateMatchReport(matchKey: string, matchReport: string) {
 
 /**
  * Submit a Man of the Match vote
+ * If voterId is provided and a vote already exists, it will be replaced
  */
-export async function submitMomVote(matchKey: string, playerName: string) {
+export async function submitMomVote(matchKey: string, playerName: string, voterId?: string) {
+  if (voterId) {
+    // Check if this voter has already voted for this match
+    const existing = await sql`
+      SELECT id FROM mom_votes
+      WHERE match_key = ${matchKey} AND voter_id = ${voterId}
+    `;
+
+    if (existing.rows.length > 0) {
+      // Update existing vote
+      await sql`
+        UPDATE mom_votes
+        SET player_name = ${playerName}, voted_at = CURRENT_TIMESTAMP
+        WHERE match_key = ${matchKey} AND voter_id = ${voterId}
+      `;
+      console.log('Updated existing vote for voter:', voterId);
+      return;
+    }
+  }
+
+  // Insert new vote
   await sql`
-    INSERT INTO mom_votes (match_key, player_name)
-    VALUES (${matchKey}, ${playerName})
+    INSERT INTO mom_votes (match_key, player_name, voter_id)
+    VALUES (${matchKey}, ${playerName}, ${voterId})
   `;
+  console.log('Inserted new vote for voter:', voterId);
 }
 
 /**
@@ -387,4 +419,100 @@ export async function calculateMomWinners(matchKey: string): Promise<{
   const winners = { mom1, mom2, mom3 };
   console.log('[calculateMomWinners] Final winners:', JSON.stringify(winners, null, 2));
   return winners;
+}
+
+/**
+ * Check if MoM results have been revealed for a match
+ */
+export async function areMomResultsRevealed(matchKey: string): Promise<boolean> {
+  try {
+    const result = await sql<{ mom_results_revealed: boolean }>`
+      SELECT mom_results_revealed FROM match_submissions WHERE match_key = ${matchKey}
+    `;
+
+    if (result.rows.length === 0) {
+      return false;
+    }
+
+    return result.rows[0].mom_results_revealed || false;
+  } catch (error) {
+    // Column might not exist yet or other error - default to not revealed
+    console.log('Error checking if MoM results revealed:', error);
+    return false;
+  }
+}
+
+/**
+ * Reveal MoM results for a match
+ */
+export async function revealMomResults(matchKey: string) {
+  try {
+    // First check if match_submission exists
+    const existing = await sql<{ id: number }>`
+      SELECT id FROM match_submissions WHERE match_key = ${matchKey}
+    `;
+
+    if (existing.rows.length === 0) {
+      // No match submission yet - create a placeholder entry
+      // Parse the matchKey to extract date, team, opponent
+      const parts = matchKey.split('-');
+      if (parts.length < 2) {
+        throw new Error('Invalid matchKey format');
+      }
+      const date = parts[0];
+      const teamAndOpponent = parts.slice(1).join('-').split(' ');
+      const team = teamAndOpponent[0] as 'CPR' | 'CPRA';
+      const opponent = teamAndOpponent.slice(1).join(' ');
+
+      // Create a basic match submission entry
+      await sql`
+        INSERT INTO match_submissions (match_key, date, team, opponent, cpr_score, opponent_score, gameweek, mom_results_revealed)
+        VALUES (${matchKey}, ${date}, ${team}, ${opponent}, 0, 0, 'TBD', TRUE)
+      `;
+      console.log('Created placeholder match submission for revealing results:', matchKey);
+    } else {
+      // Update existing match submission
+      await sql`
+        UPDATE match_submissions
+        SET mom_results_revealed = TRUE
+        WHERE match_key = ${matchKey}
+      `;
+      console.log('Updated existing match submission to reveal results:', matchKey);
+    }
+  } catch (error) {
+    // Column might not exist - try to add it first
+    console.log('Error revealing MoM results, attempting to add column:', error);
+    try {
+      await sql`ALTER TABLE match_submissions ADD COLUMN IF NOT EXISTS mom_results_revealed BOOLEAN DEFAULT FALSE`;
+      // Retry the whole function logic
+      const existing = await sql<{ id: number }>`
+        SELECT id FROM match_submissions WHERE match_key = ${matchKey}
+      `;
+
+      if (existing.rows.length === 0) {
+        const parts = matchKey.split('-');
+        if (parts.length < 2) {
+          throw new Error('Invalid matchKey format');
+        }
+        const date = parts[0];
+        const teamAndOpponent = parts.slice(1).join('-').split(' ');
+        const team = teamAndOpponent[0] as 'CPR' | 'CPRA';
+        const opponent = teamAndOpponent.slice(1).join(' ');
+
+        await sql`
+          INSERT INTO match_submissions (match_key, date, team, opponent, cpr_score, opponent_score, gameweek, mom_results_revealed)
+          VALUES (${matchKey}, ${date}, ${team}, ${opponent}, 0, 0, 'TBD', TRUE)
+        `;
+      } else {
+        await sql`
+          UPDATE match_submissions
+          SET mom_results_revealed = TRUE
+          WHERE match_key = ${matchKey}
+        `;
+      }
+    } catch (retryError) {
+      console.error('Failed to reveal MoM results even after adding column:', retryError);
+      throw retryError;
+    }
+  }
 }

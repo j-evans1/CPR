@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server';
 import { initDb } from '@/lib/db';
 
-export async function GET() {
+export async function POST() {
   try {
+    console.log('Initializing database...');
     await initDb();
-    return NextResponse.json({ success: true, message: 'Database initialized' });
+    console.log('Database initialized successfully');
+    return NextResponse.json({ success: true, message: 'Database initialized successfully' });
   } catch (error) {
-    console.error('Database initialization error:', error);
+    console.error('Error initializing database:', error);
     return NextResponse.json(
-      { success: false, error: 'Failed to initialize database' },
+      { error: error instanceof Error ? error.message : 'Failed to initialize database' },
       { status: 500 }
     );
   }

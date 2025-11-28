@@ -1,5 +1,5 @@
 import { Match, MatchPlayerPerformance } from './match-processor';
-import { getMatchSubmission } from './db';
+import { getMatchSubmission, areMomResultsRevealed, calculateMomWinners } from './db';
 
 /**
  * Generate match key from match data (same format used for grouping)
@@ -26,6 +26,15 @@ export async function mergeMatchesWithSubmissions(matches: Match[]): Promise<Mat
         return match;
       }
 
+      // Check if MoM results have been revealed
+      const resultsRevealed = await areMomResultsRevealed(matchKey);
+
+      // Calculate MoM winners if results are revealed
+      let momWinners = { mom1: [] as string[], mom2: [] as string[], mom3: [] as string[] };
+      if (resultsRevealed) {
+        momWinners = await calculateMomWinners(matchKey);
+      }
+
       // We have a submission! Convert to Match format
       const submittedPlayers: MatchPlayerPerformance[] = submission.players.map((p) => ({
         name: p.player_name,
@@ -35,9 +44,10 @@ export async function mergeMatchesWithSubmissions(matches: Match[]): Promise<Mat
         cleanSheet: p.clean_sheet,
         yellowCard: p.yellow_card,
         redCard: p.red_card,
-        mom1: p.mom_1,
-        mom2: p.mom_2,
-        mom3: p.mom_3,
+        // Only show MoM awards if results are revealed
+        mom1: resultsRevealed && momWinners.mom1.includes(p.player_name) ? 1 : 0,
+        mom2: resultsRevealed && momWinners.mom2.includes(p.player_name) ? 1 : 0,
+        mom3: resultsRevealed && momWinners.mom3.includes(p.player_name) ? 1 : 0,
         dod: p.dod,
         // Points are NOT calculated yet - show as 0 or TBD
         points: 0,

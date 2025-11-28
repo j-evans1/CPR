@@ -9,6 +9,7 @@ export default function PaymentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedPlayer, setSelectedPlayer] = useState<PlayerPaymentDetail | null>(null);
+  const [showExportView, setShowExportView] = useState(false);
 
   useEffect(() => {
     async function loadData() {
@@ -190,11 +191,80 @@ export default function PaymentsPage() {
         <p className="mt-1">Data updates automatically on page refresh</p>
       </div>
 
+      {/* Export Button */}
+      <div className="mt-8 mb-8">
+        <button
+          onClick={() => setShowExportView(true)}
+          className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-4 rounded-lg transition-colors flex items-center justify-center gap-2"
+        >
+          <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+          </svg>
+          Export Screenshot View
+        </button>
+      </div>
+
       {/* Player Detail Modal */}
       <PlayerDetailModal
         player={selectedPlayer}
         onClose={() => setSelectedPlayer(null)}
       />
+
+      {/* Export View Modal */}
+      {showExportView && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+          <div className="bg-white rounded-lg w-full max-w-md max-h-screen overflow-hidden flex flex-col">
+            {/* Header */}
+            <div className="bg-slate-800 text-white p-3 flex justify-between items-center">
+              <h3 className="font-bold text-sm">Payment Status</h3>
+              <button
+                onClick={() => setShowExportView(false)}
+                className="text-white hover:text-gray-300 text-xl leading-none"
+              >
+                ×
+              </button>
+            </div>
+
+            {/* Table */}
+            <div className="overflow-y-auto flex-1 bg-white">
+              <table className="w-full text-xs">
+                <thead className="bg-gray-100 sticky top-0">
+                  <tr>
+                    <th className="text-left py-1 px-2 font-semibold text-gray-700">#</th>
+                    <th className="text-left py-1 px-2 font-semibold text-gray-700">Player</th>
+                    <th className="text-right py-1 px-2 font-semibold text-gray-700">Amount</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {players.map((player, index) => {
+                    const isPositiveBalance = player.balance > 0;
+                    const isNegativeBalance = player.balance < 0;
+
+                    return (
+                      <tr key={player.name} className="border-b border-gray-200">
+                        <td className="py-1 px-2 text-gray-500">{index + 1}</td>
+                        <td className="py-1 px-2 text-gray-900">{player.name}</td>
+                        <td className={`py-1 px-2 text-right font-semibold ${
+                          isPositiveBalance ? 'text-red-600' :
+                          isNegativeBalance ? 'text-green-600' :
+                          'text-gray-900'
+                        }`}>
+                          {formatCurrency(player.balance)}
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Footer */}
+            <div className="bg-gray-50 p-2 text-center text-xs text-gray-500">
+              Take a screenshot to share
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
