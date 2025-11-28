@@ -12,6 +12,7 @@ export default function Navigation() {
     { name: 'Player Stats', href: '/' },
     { name: 'Fantasy League', href: '/league' },
     { name: 'Match Results', href: '/matches' },
+    { name: 'League Table', href: '/league-table' },
     { name: 'Payments', href: '/payments' },
     { name: 'Fines', href: '/fines' },
   ];
