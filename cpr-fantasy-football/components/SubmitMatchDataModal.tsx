@@ -284,7 +284,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                 <select
                   value={entry.player}
                   onChange={(e) => updateEntry(setter, index, 'player', e.target.value)}
-                  className="flex-1 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="flex-1 max-w-[55%] sm:max-w-[65%] px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none"
                 >
                   <option value="">Select player...</option>
                   {matchPlayers.map(player => (
@@ -298,7 +298,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                   value={entry.player}
                   onChange={(e) => updateEntry(setter, index, 'player', e.target.value)}
                   placeholder="Enter player name"
-                  className="flex-1 px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none"
+                  className="flex-1 max-w-[55%] sm:max-w-[65%] px-3 py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none"
                 />
               )}
               {withQuantity && (
