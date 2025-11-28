@@ -302,11 +302,11 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                 />
               )}
               {withQuantity && (
-                <div className="flex items-center gap-0.5 sm:gap-1">
+                <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
                   <button
                     type="button"
                     onClick={() => updateEntry(setter, index, 'quantity', Math.max(1, (entry.quantity || 1) - 1))}
-                    className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-base sm:text-lg flex items-center justify-center"
+                    className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-sm sm:text-lg flex items-center justify-center"
                   >
                     −
                   </button>
@@ -318,12 +318,12 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                     value={entry.quantity || 1}
                     onChange={(e) => updateEntry(setter, index, 'quantity', parseInt(e.target.value) || 1)}
                     onFocus={(e) => e.target.select()}
-                    className="w-10 sm:w-12 px-1 sm:px-2 py-1.5 sm:py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-sm sm:text-base font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                    className="w-8 sm:w-12 px-0.5 sm:px-2 py-1 sm:py-2 bg-slate-600 text-gray-100 rounded border border-slate-500 focus:border-blue-500 focus:outline-none text-center text-xs sm:text-base font-bold [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   />
                   <button
                     type="button"
                     onClick={() => updateEntry(setter, index, 'quantity', (entry.quantity || 1) + 1)}
-                    className="flex-shrink-0 w-7 h-7 sm:w-8 sm:h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-base sm:text-lg flex items-center justify-center"
+                    className="flex-shrink-0 w-6 h-6 sm:w-8 sm:h-8 bg-slate-600 hover:bg-slate-500 text-gray-100 rounded border border-slate-500 font-bold text-sm sm:text-lg flex items-center justify-center"
                   >
                     +
                   </button>
