@@ -276,7 +276,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
               <button
                 type="button"
                 onClick={() => removeEntry(setter, index)}
-                className="flex-shrink-0 w-8 h-10 sm:h-auto bg-red-600 hover:bg-red-700 text-white rounded flex items-center justify-center font-bold text-lg"
+                className="flex-shrink-0 w-4 h-5 sm:w-6 sm:h-8 bg-red-600 hover:bg-red-700 text-white rounded flex items-center justify-center font-bold text-xs sm:text-base"
               >
                 −
               </button>
