@@ -273,6 +273,13 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
         <div className="space-y-2">
           {entries.map((entry, index) => (
             <div key={index} className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => removeEntry(setter, index)}
+                className="flex-shrink-0 w-8 h-10 sm:h-auto bg-red-600 hover:bg-red-700 text-white rounded flex items-center justify-center font-bold text-lg"
+              >
+                −
+              </button>
               {!entry.isCustom ? (
                 <select
                   value={entry.player}
@@ -322,13 +329,6 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
                   </button>
                 </div>
               )}
-              <button
-                type="button"
-                onClick={() => removeEntry(setter, index)}
-                className="flex-shrink-0 w-8 sm:w-auto px-2 sm:px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
-              >
-                ✕
-              </button>
             </div>
           ))}
           <button
