@@ -325,7 +325,7 @@ export default function SubmitMatchDataModal({ match, onClose, onSuccess }: Subm
               <button
                 type="button"
                 onClick={() => removeEntry(setter, index)}
-                className="px-2 sm:px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
+                className="flex-shrink-0 w-8 sm:w-auto px-2 sm:px-3 py-2 bg-red-600 text-white rounded hover:bg-red-700 text-sm sm:text-base"
               >
                 ✕
               </button>

@@ -65,8 +65,24 @@ export default function MoMVoteModal({ match, onClose, onSuccess }: MoMVoteModal
         }
       }
     }
+
+    // Check if results are already revealed
+    checkIfResultsRevealed();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matchKey]);
+
+  const checkIfResultsRevealed = async () => {
+    try {
+      const response = await fetch(`/api/mom-vote?matchKey=${encodeURIComponent(matchKey)}`);
+      const data = await response.json();
+
+      if (response.ok && data.resultsRevealed) {
+        setResultsRevealed(true);
+      }
+    } catch (err) {
+      console.error('Failed to check if results revealed:', err);
+    }
+  };
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -215,77 +231,49 @@ export default function MoMVoteModal({ match, onClose, onSuccess }: MoMVoteModal
           </button>
         </div>
 
-        {/* Success Message */}
-        {success && (
-          <div className="m-6 bg-green-900/30 border border-green-600 rounded-lg p-4">
-            <p className="text-green-200 text-center font-semibold mb-4">Vote submitted successfully!</p>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <button
-                onClick={onClose}
-                className="py-2 bg-slate-700 text-gray-300 rounded-lg hover:bg-slate-600 transition-colors"
-              >
-                Close
-              </button>
-              <button
-                onClick={handleSeeResultsClick}
-                className="py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-              >
-                See Results
-              </button>
-            </div>
+        {/* Results Already Revealed - Only Show See Results */}
+        {resultsRevealed && !showResults && !showPasswordPrompt && (
+          <div className="m-6 bg-blue-900/30 border border-blue-600 rounded-lg p-4">
+            <p className="text-blue-200 text-center mb-4">
+              Voting for this match has ended. Results have been revealed!
+            </p>
             <button
-              onClick={() => {
-                // Cancel auto-close if user wants to reveal results
-                if (autoCloseTimeoutRef.current) {
-                  clearTimeout(autoCloseTimeoutRef.current);
-                  autoCloseTimeoutRef.current = null;
-                }
-                setWasViewingResults(false);
-                setShowPasswordPrompt(true);
-              }}
-              className="w-full py-3 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors font-semibold"
+              onClick={handleSeeResultsClick}
+              className="w-full py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
             >
-              Reveal Results (Captain)
+              See Results
             </button>
           </div>
         )}
 
-        {/* Already Voted Message */}
-        {hasVoted && !success && !showResults && !showPasswordPrompt && !showChangeVoteForm && (
-          <div className="m-6 bg-blue-900/30 border border-blue-600 rounded-lg p-4">
-            <p className="text-blue-200 text-center mb-4">
-              You&apos;ve already voted for this match!
+        {/* Success or Already Voted - Show Change Vote and Reveal Results */}
+        {!resultsRevealed && (success || hasVoted) && !showResults && !showPasswordPrompt && !showChangeVoteForm && (
+          <div className="m-6 bg-green-900/30 border border-green-600 rounded-lg p-4">
+            <p className="text-green-200 text-center font-semibold mb-4">
+              {success ? 'Vote submitted successfully!' : "You've already voted for this match!"}
             </p>
-            <div className="grid grid-cols-2 gap-3 mb-3">
-              <button
-                onClick={() => {
-                  // Load previous vote when opening change form
-                  const votedMatches = JSON.parse(localStorage.getItem('momVotes') || '{}');
-                  if (votedMatches[matchKey]) {
-                    const previousVote = votedMatches[matchKey].playerName;
-                    if (matchPlayers.includes(previousVote)) {
-                      setSelectedPlayer(previousVote);
-                      setIsOther(false);
-                      setCustomPlayer('');
-                    } else {
-                      setIsOther(true);
-                      setCustomPlayer(previousVote);
-                      setSelectedPlayer('');
-                    }
+            <button
+              onClick={() => {
+                // Load previous vote when opening change form
+                const votedMatches = JSON.parse(localStorage.getItem('momVotes') || '{}');
+                if (votedMatches[matchKey]) {
+                  const previousVote = votedMatches[matchKey].playerName;
+                  if (matchPlayers.includes(previousVote)) {
+                    setSelectedPlayer(previousVote);
+                    setIsOther(false);
+                    setCustomPlayer('');
+                  } else {
+                    setIsOther(true);
+                    setCustomPlayer(previousVote);
+                    setSelectedPlayer('');
                   }
-                  setShowChangeVoteForm(true);
-                }}
-                className="py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-              >
-                Change Vote
-              </button>
-              <button
-                onClick={handleSeeResultsClick}
-                className="py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors font-semibold"
-              >
-                See Results
-              </button>
-            </div>
+                }
+                setShowChangeVoteForm(true);
+              }}
+              className="w-full py-3 mb-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
+              Change Vote
+            </button>
             <button
               onClick={() => {
                 // Cancel auto-close if user wants to reveal results
@@ -454,7 +442,7 @@ export default function MoMVoteModal({ match, onClose, onSuccess }: MoMVoteModal
         ) : !showPasswordPrompt ? (
           <>
             {/* Form */}
-            {!success && (!hasVoted || showChangeVoteForm) && (
+            {!resultsRevealed && !success && (!hasVoted || showChangeVoteForm) && (
               <form onSubmit={handleSubmit} className="p-6">
                 {hasVoted && (
                   <div className="mb-4 bg-blue-900/30 border border-blue-600 rounded-lg p-3">
