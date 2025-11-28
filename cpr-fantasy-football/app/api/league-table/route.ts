@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import chromium from '@sparticuz/chromium';
 
 export const dynamic = 'force-dynamic';
 export const maxDuration = 60;
@@ -25,10 +26,25 @@ interface LeagueTable {
 async function fetchLeagueTable(divisionSeason: string): Promise<LeagueTable> {
   const url = `https://fulltime.thefa.com/table.html?divisionseason=${divisionSeason}`;
 
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: ['--no-sandbox', '--disable-setuid-sandbox'],
-  });
+  let browser;
+
+  try {
+    // Try serverless chromium first (Vercel, AWS Lambda, etc.)
+    browser = await puppeteer.launch({
+      args: chromium.args,
+      defaultViewport: chromium.defaultViewport,
+      executablePath: await chromium.executablePath(),
+      headless: chromium.headless,
+    });
+  } catch (error) {
+    // Fallback to local Chrome/Chromium for development
+    console.log('Using local Chromium for development');
+    const puppeteerRegular = await import('puppeteer');
+    browser = await puppeteerRegular.default.launch({
+      headless: true,
+      args: ['--no-sandbox', '--disable-setuid-sandbox'],
+    });
+  }
 
   try {
     const page = await browser.newPage();
