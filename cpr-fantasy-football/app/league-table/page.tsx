@@ -22,7 +22,11 @@ interface LeagueTable {
 }
 
 async function getLeagueTables(): Promise<LeagueTable[]> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+  // Use relative URL for server-side fetches, or construct absolute URL from headers
+  const baseUrl = process.env.VERCEL_URL
+    ? `https://${process.env.VERCEL_URL}`
+    : process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+
   const response = await fetch(`${baseUrl}/api/league-table`, {
     cache: 'no-store',
   });
