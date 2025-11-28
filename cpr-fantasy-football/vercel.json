@@ -1,0 +1,18 @@
+{
+    "crons": [
+        {
+            "path": "/api/cron/scrape-league-tables",
+            "schedule": "0 15 * * 6"
+        },
+        {
+            "path": "/api/cron/scrape-league-tables",
+            "schedule": "0 17 * * 6"
+        }
+    ],
+    "functions": {
+        "app/api/cron/scrape-league-tables/route.ts": {
+            "maxDuration": 60,
+            "memory": 3008
+        }
+    }
+}

@@ -17,53 +17,79 @@ const CACHE_DURATION_MS = 60000; // 1 minute cache
  */
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export async function fetchCSV<T = any>(url: string, useHeaders: boolean = true): Promise<T[]> {
-  try {
-    // Check cache first
-    const cacheKey = `${url}-${useHeaders}`;
-    const cached = cache.get(cacheKey) as CacheEntry<T> | undefined;
+  const MAX_RETRIES = 3;
+  const RETRY_DELAY = 1000; // 1 second
+  const TIMEOUT = 10000; // 10 seconds
 
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MS) {
-      console.log(`Using cached data for ${url}`);
-      return cached.data;
+  let lastError: Error | null = null;
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      // Check cache first
+      const cacheKey = `${url}-${useHeaders}`;
+      const cached = cache.get(cacheKey) as CacheEntry<T> | undefined;
+
+      if (cached && Date.now() - cached.timestamp < CACHE_DURATION_MS) {
+        console.log(`Using cached data for ${url}`);
+        return cached.data;
+      }
+
+      // Fetch fresh data
+      console.log(`Fetching fresh data for ${url} (Attempt ${attempt}/${MAX_RETRIES})`);
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), TIMEOUT);
+
+      try {
+        const response = await fetch(url, {
+          cache: 'no-store',
+          signal: controller.signal,
+        });
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch CSV: ${response.statusText} (${response.status})`);
+        }
+
+        const csvText = await response.text();
+
+        const data = await new Promise<T[]>((resolve, reject) => {
+          Papa.parse(csvText, {
+            header: useHeaders,
+            dynamicTyping: true,
+            skipEmptyLines: true,
+            complete: (results) => {
+              if (results.errors.length > 0) {
+                console.warn(`CSV Parsing warnings for ${url}:`, results.errors);
+              }
+              resolve(results.data as T[]);
+            },
+            error: (error: Error) => {
+              reject(error);
+            },
+          });
+        });
+
+        // Store in cache
+        cache.set(cacheKey, {
+          data,
+          timestamp: Date.now(),
+        });
+
+        return data;
+      } finally {
+        clearTimeout(timeoutId);
+      }
+    } catch (error) {
+      console.error(`Error fetching CSV (Attempt ${attempt}/${MAX_RETRIES}):`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
+
+      if (attempt < MAX_RETRIES) {
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * attempt));
+      }
     }
-
-    // Fetch fresh data
-    console.log(`Fetching fresh data for ${url}`);
-    const response = await fetch(url, {
-      cache: 'no-store',
-    });
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch CSV: ${response.statusText}`);
-    }
-
-    const csvText = await response.text();
-
-    const data = await new Promise<T[]>((resolve, reject) => {
-      Papa.parse(csvText, {
-        header: useHeaders,
-        dynamicTyping: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          resolve(results.data as T[]);
-        },
-        error: (error: Error) => {
-          reject(error);
-        },
-      });
-    });
-
-    // Store in cache
-    cache.set(cacheKey, {
-      data,
-      timestamp: Date.now(),
-    });
-
-    return data;
-  } catch (error) {
-    console.error('Error fetching CSV:', error);
-    throw error;
   }
+
+  throw lastError || new Error('Failed to fetch CSV after multiple attempts');
 }
 
 /**

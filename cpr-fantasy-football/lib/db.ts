@@ -119,6 +119,25 @@ export async function initDb() {
   } catch (e) {
     console.log('Index already exists or error creating index:', e);
   }
+
+  // Create league_table_cache table for cached scraping
+  await sql`
+    CREATE TABLE IF NOT EXISTS league_table_cache (
+      id SERIAL PRIMARY KEY,
+      division_id VARCHAR(50) UNIQUE NOT NULL,
+      division_name VARCHAR(255) NOT NULL,
+      table_data JSONB NOT NULL,
+      scraped_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      scrape_success BOOLEAN DEFAULT TRUE
+    )
+  `;
+
+  // Create index for faster lookups
+  try {
+    await sql`CREATE INDEX IF NOT EXISTS idx_league_table_division ON league_table_cache(division_id)`;
+  } catch (e) {
+    console.log('League table index already exists or error creating index:', e);
+  }
 }
 
 /**
@@ -515,4 +534,78 @@ export async function revealMomResults(matchKey: string) {
       throw retryError;
     }
   }
+}
+
+/**
+ * League Table Cache Functions
+ */
+
+export interface LeagueTableCacheEntry {
+  id: number;
+  division_id: string;
+  division_name: string;
+  table_data: any; // JSON data
+  scraped_at: Date;
+  scrape_success: boolean;
+}
+
+/**
+ * Store or update league table data in cache
+ */
+export async function upsertLeagueTableData(
+  divisionId: string,
+  divisionName: string,
+  tableData: any,
+  success: boolean = true
+) {
+  await sql`
+    INSERT INTO league_table_cache (division_id, division_name, table_data, scrape_success, scraped_at)
+    VALUES (${divisionId}, ${divisionName}, ${JSON.stringify(tableData)}, ${success}, CURRENT_TIMESTAMP)
+    ON CONFLICT (division_id)
+    DO UPDATE SET
+      division_name = ${divisionName},
+      table_data = ${JSON.stringify(tableData)},
+      scrape_success = ${success},
+      scraped_at = CURRENT_TIMESTAMP
+  `;
+  console.log(`Upserted league table cache for division ${divisionId}`);
+}
+
+/**
+ * Get latest cached league table data for all divisions
+ */
+export async function getLatestLeagueTableData() {
+  const result = await sql<LeagueTableCacheEntry>`
+    SELECT * FROM league_table_cache
+    WHERE scrape_success = TRUE
+    ORDER BY scraped_at DESC
+  `;
+
+  return result.rows.map(row => ({
+    id: row.division_id,
+    name: row.division_name,
+    rows: row.table_data,
+    scrapedAt: row.scraped_at,
+  }));
+}
+
+/**
+ * Get cache status (last scrape time and success)
+ */
+export async function getLeagueTableCacheStatus() {
+  const result = await sql<LeagueTableCacheEntry>`
+    SELECT division_id, division_name, scraped_at, scrape_success
+    FROM league_table_cache
+    ORDER BY scraped_at DESC
+    LIMIT 1
+  `;
+
+  if (result.rows.length === 0) {
+    return null;
+  }
+
+  return {
+    lastScrapedAt: result.rows[0].scraped_at,
+    success: result.rows[0].scrape_success,
+  };
 }
