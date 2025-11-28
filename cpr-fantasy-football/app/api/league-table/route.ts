@@ -29,28 +29,41 @@ async function fetchLeagueTable(divisionSeason: string): Promise<LeagueTable> {
   let browser;
 
   try {
+    console.log(`Launching browser for ${divisionSeason}...`);
     // Try serverless chromium first (Vercel, AWS Lambda, etc.)
     browser = await puppeteer.launch({
-      args: [...chromium.args, '--no-sandbox', '--disable-setuid-sandbox'],
+      args: [
+        ...chromium.args,
+        '--no-sandbox',
+        '--disable-setuid-sandbox',
+        '--disable-dev-shm-usage',
+        '--disable-gpu',
+        '--single-process',
+      ],
       executablePath: await chromium.executablePath(),
       headless: true,
     });
+    console.log('Browser launched successfully (serverless)');
   } catch (error) {
     // Fallback to local Chrome/Chromium for development
-    console.log('Using local Chromium for development');
+    console.log('Serverless chromium failed, using local Chromium:', error);
     const puppeteerRegular = await import('puppeteer');
     browser = await puppeteerRegular.default.launch({
       headless: true,
       args: ['--no-sandbox', '--disable-setuid-sandbox'],
     });
+    console.log('Browser launched successfully (local)');
   }
 
   try {
     const page = await browser.newPage();
-    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    console.log(`Navigating to ${url}...`);
+    await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 });
 
     // Wait for the table to be populated
-    await page.waitForSelector('table tbody tr', { timeout: 10000 });
+    console.log('Waiting for table to load...');
+    await page.waitForSelector('table tbody tr', { timeout: 15000 });
+    console.log('Table loaded, extracting data...');
 
     // Extract the data from the page
     const data = await page.evaluate(() => {
@@ -118,10 +131,16 @@ async function fetchLeagueTable(divisionSeason: string): Promise<LeagueTable> {
 
 export async function GET() {
   try {
-    const [cprTable, cprATable] = await Promise.all([
-      fetchLeagueTable('297360682'),
-      fetchLeagueTable('964182765'),
-    ]);
+    console.log('Starting league table fetch...');
+
+    // Fetch sequentially to reduce memory usage and avoid timeouts
+    console.log('Fetching CPR table...');
+    const cprTable = await fetchLeagueTable('297360682');
+    console.log('CPR table fetched:', cprTable.rows.length, 'teams');
+
+    console.log('Fetching CPR A table...');
+    const cprATable = await fetchLeagueTable('964182765');
+    console.log('CPR A table fetched:', cprATable.rows.length, 'teams');
 
     return NextResponse.json({
       tables: [
@@ -131,8 +150,13 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching league tables:', error);
+    console.error('Error details:', error instanceof Error ? error.message : String(error));
+    console.error('Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return NextResponse.json(
-      { error: 'Failed to fetch league tables' },
+      {
+        error: 'Failed to fetch league tables',
+        details: error instanceof Error ? error.message : String(error)
+      },
       { status: 500 }
     );
   }
