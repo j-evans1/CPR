@@ -1,145 +1,103 @@
-import puppeteer from 'puppeteer-core';
-import chromium from '@sparticuz/chromium';
+import * as cheerio from 'cheerio';
 
 export interface LeagueTableRow {
-    position: number;
-    team: string;
-    played: number;
-    won: number;
-    drawn: number;
-    lost: number;
-    goalsFor: number;
-    goalsAgainst: number;
-    goalDifference: number;
-    points: number;
+  position: number;
+  team: string;
+  played: number;
+  won: number;
+  drawn: number;
+  lost: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+  points: number;
 }
 
-export interface LeagueTable {
-    id: string;
-    name: string;
-    rows: LeagueTableRow[];
+export interface LeagueTableData {
+  name: string;
+  rows: LeagueTableRow[];
+  lastUpdated: string;
 }
 
-async function fetchTableForDivision(divisionSeason: string): Promise<LeagueTable> {
-    const url = `https://fulltime.thefa.com/table.html?divisionseason=${divisionSeason}`;
-    let browser;
+export async function fetchLeagueTable(divisionSeason: string): Promise<LeagueTableRow[]> {
+  const url = `https://fulltime.thefa.com/table.html?divisionseason=${divisionSeason}`;
 
-    try {
-        console.log(`Launching browser for ${divisionSeason}...`);
-        // Try serverless chromium first (Vercel, AWS Lambda, etc.)
-        browser = await puppeteer.launch({
-            args: [
-                ...chromium.args,
-                '--no-sandbox',
-                '--disable-setuid-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu',
-                '--single-process',
-            ],
-            executablePath: await chromium.executablePath(),
-            headless: true,
-        });
-    } catch (error) {
-        // Fallback to local Chrome/Chromium for development
-        console.log('Serverless chromium failed, using local Chromium:', error);
-        const puppeteerRegular = await import('puppeteer');
-        browser = await puppeteerRegular.default.launch({
-            headless: true,
-            args: ['--no-sandbox', '--disable-setuid-sandbox'],
-        });
+  try {
+    const response = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
+      },
+      // Cache for 1 hour (3600 seconds)
+      next: { revalidate: 3600 },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch: ${response.status}`);
     }
 
-    try {
-        const page = await browser.newPage();
-        // Block images and fonts to speed up loading
-        await page.setRequestInterception(true);
-        page.on('request', (req) => {
-            if (['image', 'stylesheet', 'font'].includes(req.resourceType())) {
-                req.abort();
-            } else {
-                req.continue();
-            }
-        });
+    const html = await response.text();
+    const $ = cheerio.load(html);
 
-        console.log(`Navigating to ${url}...`);
-        await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 25000 });
+    const rows: LeagueTableRow[] = [];
 
-        // Wait for the table to be populated
-        await page.waitForSelector('table tbody tr', { timeout: 15000 });
+    // Find the main table and extract data
+    $('table tbody tr').each((index, element) => {
+      const cells = $(element).find('td');
 
-        // Extract the data from the page
-        const data = await page.evaluate(() => {
-            const leagueName = document.querySelector('h2')?.textContent?.trim() ||
-                document.querySelector('.page-title')?.textContent?.trim() ||
-                'League Table';
+      if (cells.length >= 10) {
+        const position = parseInt($(cells[0]).text().trim()) || 0;
+        const team = $(cells[1]).text().trim();
+        const played = parseInt($(cells[2]).text().trim()) || 0;
+        const won = parseInt($(cells[3]).text().trim()) || 0;
+        const drawn = parseInt($(cells[4]).text().trim()) || 0;
+        const lost = parseInt($(cells[5]).text().trim()) || 0;
+        const goalsFor = parseInt($(cells[6]).text().trim()) || 0;
+        const goalsAgainst = parseInt($(cells[7]).text().trim()) || 0;
+        const goalDifference = parseInt($(cells[8]).text().trim()) || 0;
+        const points = parseInt($(cells[9]).text().trim()) || 0;
 
-            const allRows: any[] = [];
-            const tableRows = document.querySelectorAll('table tbody tr');
+        // Only add valid rows (skip duplicates from home/away tables)
+        if (team && position > 0 && !rows.find(r => r.position === position)) {
+          rows.push({
+            position,
+            team,
+            played,
+            won,
+            drawn,
+            lost,
+            goalsFor,
+            goalsAgainst,
+            goalDifference,
+            points,
+          });
+        }
+      }
+    });
 
-            tableRows.forEach((row) => {
-                const cells = row.querySelectorAll('td');
-                if (cells.length >= 10) {
-                    const position = parseInt(cells[0]?.textContent?.trim() || '0');
-                    const team = cells[1]?.textContent?.trim() || '';
-                    const played = parseInt(cells[2]?.textContent?.trim() || '0');
-                    const won = parseInt(cells[3]?.textContent?.trim() || '0');
-                    const drawn = parseInt(cells[4]?.textContent?.trim() || '0');
-                    const lost = parseInt(cells[5]?.textContent?.trim() || '0');
-                    const goalsFor = parseInt(cells[6]?.textContent?.trim() || '0');
-                    const goalsAgainst = parseInt(cells[7]?.textContent?.trim() || '0');
-                    const goalDifference = parseInt(cells[8]?.textContent?.trim() || '0');
-                    const points = parseInt(cells[9]?.textContent?.trim() || '0');
-
-                    if (team && position > 0) {
-                        allRows.push({
-                            position,
-                            team,
-                            played,
-                            won,
-                            drawn,
-                            lost,
-                            goalsFor,
-                            goalsAgainst,
-                            goalDifference,
-                            points,
-                        });
-                    }
-                }
-            });
-
-            // Take only the first occurrence of each position (1-10)
-            const rows: any[] = [];
-            const seenPositions = new Set<number>();
-
-            for (const row of allRows) {
-                if (!seenPositions.has(row.position)) {
-                    seenPositions.add(row.position);
-                    rows.push(row);
-                    if (rows.length >= 14) break; // Increased limit just in case
-                }
-            }
-
-            return { name: leagueName, rows };
-        });
-
-        return { ...data, id: divisionSeason };
-    } finally {
-        if (browser) await browser.close();
-    }
+    // Sort by position just to be safe
+    return rows.sort((a, b) => a.position - b.position);
+  } catch (error) {
+    console.error('Error fetching league table:', error);
+    throw error;
+  }
 }
 
-export async function getLeagueTables(): Promise<LeagueTable[]> {
-    try {
-        // Fetch sequentially
-        const cprTable = await fetchTableForDivision('297360682');
-        const cprATable = await fetchTableForDivision('964182765');
+export async function getLeagueTableData(): Promise<LeagueTableData> {
+  console.log('Fetching CPR league table...');
+  const cprTable = await fetchLeagueTable('297360682');
 
-        return [
-            { ...cprTable, id: 'cpr' },
-            { ...cprATable, id: 'cpr-a' },
-        ];
-    } catch (error) {
-        console.error('Error fetching league tables:', error);
-        throw error;
-    }
+  // Get the league name from the page as well
+  const response = await fetch('https://fulltime.thefa.com/table.html?divisionseason=297360682', {
+    // Cache for 1 hour (3600 seconds)
+    next: { revalidate: 3600 },
+  });
+  const html = await response.text();
+  const $ = cheerio.load(html);
+  const leagueName = $('h2').first().text().trim() || 'CPR League';
+
+  return {
+    name: leagueName,
+    rows: cprTable,
+    lastUpdated: new Date().toISOString(),
+  };
 }
