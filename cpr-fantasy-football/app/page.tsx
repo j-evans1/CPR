@@ -3,6 +3,7 @@ import { getMatches, Match } from '@/lib/match-processor';
 import { mergeMatchesWithSubmissions } from '@/lib/submission-merger';
 import { PlayerStat } from '@/lib/types';
 import PlayerStatsTable from '@/components/PlayerStatsTable';
+import Snow from '@/components/Snow';
 
 export const dynamic = 'force-dynamic'; // Always fetch fresh data
 
@@ -31,6 +32,7 @@ export default async function Home() {
 
   return (
     <div>
+      <Snow />
       <div className="mb-8">
         <h2 className="text-5xl font-bold text-slate-100 mb-3 tracking-tight">PLAYER STATS</h2>
         <p className="text-gray-400 font-light tracking-wide">Season 2025/26 - Updated live from match data</p>
